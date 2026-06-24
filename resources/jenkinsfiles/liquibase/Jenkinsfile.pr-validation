@@ -12,7 +12,7 @@
 
 @Library('ci-jenkins-shared-libraries@liquibase') _
 
-node('self-hosted') {
+node('built-in') {
 
     stage('Git Checkout') {
         echo "Workspace already has ci-jenkins-shared-libraries files"
