@@ -1,22 +1,7 @@
-// =============================================================================
-//  Jenkinsfile.pr-validation
-//  Path in repo: resources/jenkinsfiles/liquibase/Jenkinsfile.pr-validation
-//
-//  Trigger:  Pull Request event (GitHub Webhook)
-//  Job type: Pipeline Job
-//  SCM:      https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git
-//  Branch:   liquibase
-//  Script:   resources/jenkinsfiles/liquibase/Jenkinsfile.pr-validation
-//
-// =============================================================================
-
 @Library('ci-jenkins-shared-libraries@liquibase') _
 
 node('built-in') {
-
     stage('Git Checkout') {
-        echo "Workspace already has ci-jenkins-shared-libraries files"
-        echo "Liquibase files location: ${WORKSPACE}/liquibase/"
         checkout scm
     }
 
@@ -29,19 +14,81 @@ node('built-in') {
             dir("${WORKSPACE}/liquibase") {
                 sh '''
                     echo "=== Running Liquibase Validate ==="
-                    export LIQUIBASE_URL="${LB_URL}"
-                    export LIQUIBASE_USERNAME="${LB_USER}"
-                    export LIQUIBASE_PASSWORD="${LB_PASS}"
-                    liquibase validate
-                    echo "=== Changelog is VALID — PR can be merged ==="
+                    liquibase \
+                        --url="${LB_URL}" \
+                        --username="${LB_USER}" \
+                        --password="${LB_PASS}" \
+                        --changelog-file=changelog/db.changelog-master.xml \
+                        validate
+                    echo "=== Changelog is VALID ==="
+                '''
+            }
+        }
+    }
+}
+JENKINS
+
+# Drift Detection fix
+cat > resources/jenkinsfiles/liquibase/Jenkinsfile.drift-detection << 'JENKINS'
+@Library('ci-jenkins-shared-libraries@liquibase') _
+
+properties([pipelineTriggers([cron('H */6 * * *')])])
+
+node('self-hosted') {
+    stage('Git Checkout') {
+        checkout scm
+    }
+
+    stage('Liquibase Status') {
+        withCredentials([
+            string(credentialsId: 'LIQUIBASE_URL',      variable: 'LB_URL'),
+            string(credentialsId: 'LIQUIBASE_USERNAME', variable: 'LB_USER'),
+            string(credentialsId: 'LIQUIBASE_PASSWORD', variable: 'LB_PASS')
+        ]) {
+            dir("${WORKSPACE}/liquibase") {
+                sh '''
+                    echo "=== Checking Pending Changesets ==="
+                    liquibase \
+                        --url="${LB_URL}" \
+                        --username="${LB_USER}" \
+                        --password="${LB_PASS}" \
+                        --changelog-file=changelog/db.changelog-master.xml \
+                        status --verbose
                 '''
             }
         }
     }
 
-    post_build_cleanup()
-}
+    stage('Detect Unauthorized Drift') {
+        withCredentials([
+            string(credentialsId: 'LIQUIBASE_URL',      variable: 'LB_URL'),
+            string(credentialsId: 'LIQUIBASE_USERNAME', variable: 'LB_USER'),
+            string(credentialsId: 'LIQUIBASE_PASSWORD', variable: 'LB_PASS')
+        ]) {
+            dir("${WORKSPACE}/liquibase") {
+                sh '''
+                    mkdir -p drift-reports snapshots
+                    if [ -f "snapshots/baseline.snapshot.json" ]; then
+                        echo "=== Comparing live DB against baseline ==="
+                        liquibase \
+                            --url="${LB_URL}" \
+                            --username="${LB_USER}" \
+                            --password="${LB_PASS}" \
+                            diff \
+                            --reference-url="offline:postgresql?snapshot=snapshots/baseline.snapshot.json" \
+                            > drift-reports/drift.txt 2>&1 || true
+                        cat drift-reports/drift.txt
+                    else
+                        echo "=== No baseline snapshot — run Deploy job first ==="
+                    fi
+                '''
+            }
+        }
+    }
 
-def post_build_cleanup() {
-    echo "Pipeline completed with status: ${currentBuild.currentResult}"
+    stage('Publish Drift Report') {
+        dir("${WORKSPACE}/liquibase") {
+            archiveArtifacts artifacts: 'drift-reports/**', allowEmptyArchive: true
+        }
+    }
 }
