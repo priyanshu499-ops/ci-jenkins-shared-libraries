@@ -2,7 +2,7 @@
 
 properties([pipelineTriggers([cron('H */6 * * *')])])
 
-node('built-in') {
+node('self-hosted') {
     stage('Git Checkout') {
         checkout scm
     }
@@ -47,7 +47,7 @@ node('built-in') {
                             > drift-reports/drift.txt 2>&1 || true
                         cat drift-reports/drift.txt
                     else
-                        echo "=== No baseline snapshot found — run Deploy job first ==="
+                        echo "=== No baseline snapshot — run Deploy job first ==="
                     fi
                 '''
             }
