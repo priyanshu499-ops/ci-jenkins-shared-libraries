@@ -64,9 +64,11 @@ node('agent') {
     fail_job_if_validation_fail      : 'false',
     // PUBLISH ARTIFACT
     artifact_publish_check           : true,
-    artifact_destination_type        : 'dockerhub',
-    dockerhub_credentials_id         : 'dockerhub-creds',
-    dockerhub_username               : 'priyanshu498',
+    artifact_destination_type        : 'gcr',
+    docker_image_name                : 'spring-boot-realworld',
+    gcp_project_id                   : 'montra-490412',
+    gcr_hostname                     : 'asia-south2-docker.pkg.dev',
+    gcp_credentials_id               : 'gcp-service-account-key',
     // NOTIFICATION
     notification_enabled             : false
   ])

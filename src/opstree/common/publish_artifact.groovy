@@ -162,8 +162,37 @@ def publish_artifact(Map step_params) {
                 logger.logger('msg':'Removed Docker images from local', 'level':'INFO')
             }
         }
+        else if (step_params.artifact_destination_type == 'gcr') {
+            def gcp_project_id     = "${step_params.gcp_project_id}"
+            def gcr_hostname       = "${step_params.gcr_hostname ?: 'gcr.io'}"
+            def gcp_credentials_id = "${step_params.gcp_credentials_id}"
+            docker_image_name      = "${step_params.docker_image_name}"
+            repo_url               = "${step_params.repo_url}"
+            repo_dir               = parser.fetch_git_repo_name('repo_url':"${repo_url}")
+
+            def docker_image_tag = sh(
+                script: """git config --global --add safe.directory ${WORKSPACE}/${repo_dir} && \
+                           cd ${WORKSPACE}/${repo_dir} && git rev-parse --short HEAD""",
+                returnStdout: true
+            ).trim()
+
+            withCredentials([file(credentialsId: gcp_credentials_id, variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                sh """
+                    // gcloud auth activate-service-account --key-file=\$GOOGLE_APPLICATION_CREDENTIALS
+                    gcloud auth configure-docker ${gcr_hostname}
+                    docker tag ${docker_image_name}:${docker_image_tag} ${gcr_hostname}/${gcp_project_id}/${docker_image_name}:${docker_image_tag}
+                    docker push ${gcr_hostname}/${gcp_project_id}/${docker_image_name}:${docker_image_tag}
+                """
+                logger.logger('msg':'Uploaded Image successfully to GCR', 'level':'INFO')
+                logger.logger('msg':'Removing Docker images from local', 'level':'INFO')
+                sh """
+                    docker rmi -f ${docker_image_name}:${docker_image_tag} ${gcr_hostname}/${gcp_project_id}/${docker_image_name}:${docker_image_tag}
+                """
+                logger.logger('msg':'Removed Docker images from local', 'level':'INFO')
+            }
+        }
         else {
-            logger.logger('msg':'Choose appropriate publish destination (S3, ECR, Harbor, or DockerHub)!', 'level':'ERROR')
+            logger.logger('msg':'Choose appropriate publish destination (S3, ECR, Harbor, DockerHub, or GCR)!', 'level':'ERROR')
             error("Invalid artifact destination type: ${step_params.artifact_destination_type}")
         }
     } catch (Exception e) {
