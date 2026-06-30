@@ -78,7 +78,8 @@ def call(Map step_params) {
                                         fail_job_if_dependency_returned_exception: "${get_params_value(enableOverride, step_params, 'fail_job_if_dependency_returned_exception')}",
                                         source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
                                         app_stack: "${get_params_value(enableOverride, step_params, 'app_stack')}",
-                                        pom_location: "${get_params_value(enableOverride, step_params, 'pom_location')}"
+                                        pom_location: "${get_params_value(enableOverride, step_params, 'pom_location')}",
+                                        nvd_api_key_creds_id: "${get_params_value(enableOverride, step_params, 'nvd_api_key_creds_id')}"
                                 )
                     }
                         }
