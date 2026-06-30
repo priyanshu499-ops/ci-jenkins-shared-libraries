@@ -122,8 +122,48 @@ def publish_artifact(Map step_params) {
                 logger.logger('msg':'Removed Docker images from local', 'level':'INFO')
                                            }
         }
+        else if (step_params.artifact_destination_type == 'dockerhub') {
+            dockerhub_credentials_id = "${step_params.dockerhub_credentials_id}"
+            dockerhub_username       = "${step_params.dockerhub_username}"
+            docker_image_name        = "${step_params.docker_image_name}"
+            repo_url                 = "${step_params.repo_url}"
+            repo_dir                 = parser.fetch_git_repo_name('repo_url':"${repo_url}")
+
+            def docker_image_tag = sh(
+                            script: """git config --global --add safe.directory ${WORKSPACE}/${repo_dir} && \
+                                       cd ${WORKSPACE}/${repo_dir} && git rev-parse --short HEAD""",
+                            returnStdout: true
+                        ).trim()
+
+            withCredentials([usernamePassword(credentialsId: dockerhub_credentials_id,
+                                           usernameVariable: 'DOCKERHUB_USER',
+                                           passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                // Login to Docker Hub
+                sh """
+                  echo "\$DOCKERHUB_PASSWORD" | docker login -u "\$DOCKERHUB_USER" --password-stdin
+                   """
+
+                // Tag and push the image (commit-hash tag + latest)
+                sh """
+                    docker tag $docker_image_name:$docker_image_tag ${dockerhub_username}/$docker_image_name:$docker_image_tag
+                    docker tag $docker_image_name:$docker_image_tag ${dockerhub_username}/$docker_image_name:latest
+                    docker push ${dockerhub_username}/$docker_image_name:$docker_image_tag
+                    docker push ${dockerhub_username}/$docker_image_name:latest
+                """
+
+                logger.logger('msg':'Uploaded Image successfully to Docker Hub', 'level':'INFO')
+
+                // Clean up local images
+                logger.logger('msg':'Removing Docker images from local', 'level':'INFO')
+                sh """
+                    docker rmi -f $docker_image_name:$docker_image_tag ${dockerhub_username}/$docker_image_name:$docker_image_tag ${dockerhub_username}/$docker_image_name:latest
+                    docker logout
+                """
+                logger.logger('msg':'Removed Docker images from local', 'level':'INFO')
+            }
+        }
         else {
-            logger.logger('msg':'Choose appropriate publish destination (S3, ECR, or Harbor)!', 'level':'ERROR')
+            logger.logger('msg':'Choose appropriate publish destination (S3, ECR, Harbor, or DockerHub)!', 'level':'ERROR')
             error("Invalid artifact destination type: ${step_params.artifact_destination_type}")
         }
     } catch (Exception e) {

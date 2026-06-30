@@ -247,6 +247,9 @@ def call(Map step_params) {
                         harbor_url: "${step_params.harbor_url}",
                         harbor_project: "${step_params.harbor_project}",
                         harbor_credentials_id: "${step_params.harbor_credentials_id}",
+                        // DockerHub parameters
+                        dockerhub_credentials_id: "${step_params.dockerhub_credentials_id}",
+                        dockerhub_username: "${step_params.dockerhub_username}",
                         // S3 parameters
                         artifact_source_path: "${step_params.artifact_source_path}",
                         artifact_s3_bucket_name: "${step_params.artifact_s3_bucket_name}",
