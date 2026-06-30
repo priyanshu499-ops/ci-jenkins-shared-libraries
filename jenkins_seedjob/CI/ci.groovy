@@ -2,7 +2,7 @@ def ciJobs = [
     'spring-boot-realworld': [
         url        : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
         credentials: 'github-token',
-        branch     : 'master',
+        branch     : 'main',
         scriptPath : 'jenkins_wrapper/spring-boot-realworld/Jenkinsfile'
     ]
 ]
