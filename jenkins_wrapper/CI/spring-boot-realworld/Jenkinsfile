@@ -71,7 +71,12 @@ node {
     gcr_repository                   : 'dev-app-images',
 
     //Deployment
-    enable_trigger_cd_pipeline       : false,
+    enable_trigger_cd_pipeline       : true,
+    trigger_cd_pipeline_path         : "CD/spring-boot-realworld",
+    image_tag_build_param            : 'image_tag',
+
+    //Deployment
+    //enable_trigger_cd_pipeline       : false,
     // trigger_cd_pipeline_path         : "CD/spring-boot-realworld",
     // image_tag_build_param            : 'image_tag',
     // cd_environment_build_param       : 'env',
