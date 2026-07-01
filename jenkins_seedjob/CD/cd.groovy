@@ -15,8 +15,9 @@ cdJobs.each { jobName, config ->
             numToKeep(10)
         }
         parameters {
-            stringParam('BRANCH', config.branch, 'Branch to build')
-        }
+        stringParam('BRANCH', config.branch, 'Branch to build')
+        stringParam('image_tag', 'latest', 'Docker image tag to deploy')
+}
         definition {
             cpsScm {
                 scm {
