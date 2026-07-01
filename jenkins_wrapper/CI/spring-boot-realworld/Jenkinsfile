@@ -71,12 +71,14 @@ node {
     gcr_repository                   : 'dev-app-images',
 
     //Deployment
-    enable_trigger_cd_pipeline       : true,
-    trigger_cd_pipeline_path         : "CD/spring-boot-realworld",
-    image_tag_build_param            : 'image_tag',
-    cd_environment_build_param       : 'env',
-    app_name_build_param             : 'app_name',
-    env                              : params.ENVIRONMENT,
+    enable_trigger_cd_pipeline       : false,
+    // trigger_cd_pipeline_path         : "CD/spring-boot-realworld",
+    // image_tag_build_param            : 'image_tag',
+    // cd_environment_build_param       : 'env',
+    // app_name_build_param             : 'app_name',
+    // env                              : params.ENVIRONMENT,
+    // enable_jira                      : false,
+    // jira_ticket_id_build_param       : 'JIRA_TICKET_ID',
     // NOTIFICATION
     notification_enabled             : false
   ])
