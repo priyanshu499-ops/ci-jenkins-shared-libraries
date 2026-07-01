@@ -17,7 +17,6 @@ def call(Map step_params) {
         def dependencyscan        = new dependency_scanning()
         def static_code_analysis  = new static_code_analysis()
         def unittest              = new junit()
-        // snyk_scanning removed (file deleted)
         def build_dockerfile      = new build_dockerfile()
         def coverage              = new codecoverage()
         def publish               = new publish_artifact()
@@ -26,8 +25,6 @@ def call(Map step_params) {
         def image_size_validator  = new image_size_validator()
         def notify                = new notify()
         def build                 = new build_artifact()
-        // build_packer_ami removed (file deleted)
-        // jira_management removed (file deleted)
 
         def repo_url
         if (get_params_value(enableOverride, step_params, 'repo_url_type') == 'http') {
@@ -278,12 +275,6 @@ def call(Map step_params) {
             }
             throw e
         } finally {
-                // This block will always execute
-                // jira_management removed (file deleted) - jira block disabled
-                // if (get_params_value(enableOverride, step_params, 'enable_jira') != null && get_params_value(enableOverride, step_params, 'enable_jira').toBoolean()) {
-                //     jira.jira_factory(...)
-                // }
-
                 if (currentBuild.currentResult == 'SUCCESS' && get_params_value(enableOverride, step_params, 'enable_trigger_cd_pipeline') != null && get_params_value(enableOverride, step_params, 'enable_trigger_cd_pipeline').toBoolean() ) {
                         try {
                             def parser  = new parser()
