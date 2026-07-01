@@ -24,7 +24,9 @@ def call(Map step_params) {
         def dockle                = new dockle_scanning()
         def image_size_validator  = new image_size_validator()
         def notify                = new notify()
-        def build                 = new build_artifact()
+       // def build                 = new build_artifact()
+ 
+        def buildArtifact         = new build_artifact() 
 
         def repo_url
         if (get_params_value(enableOverride, step_params, 'repo_url_type') == 'http') {
@@ -90,7 +92,7 @@ def call(Map step_params) {
 
                 if (get_params_value(enableOverride, step_params, 'perform_code_build') != null && get_params_value(enableOverride, step_params, 'perform_code_build').toBoolean()) {
                         stage('Build Artifact') {
-                        build.build_factory(
+                        buildArtifact.build_factory(
                                 perform_code_build: "${get_params_value(enableOverride, step_params, 'perform_code_build')}",
                                 repo_url: "${repo_url}",
                                 repo_url_type: "${get_params_value(enableOverride, step_params, 'repo_url_type')}",
