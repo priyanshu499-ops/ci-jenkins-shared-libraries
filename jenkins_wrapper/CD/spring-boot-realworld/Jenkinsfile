@@ -34,7 +34,7 @@ node {
     prune_post_deployment: true,
     perform_health_check: false,
 
-    dry_run: false,
+    dry_run: true,
     require_manual_approval: true,
     manual_approval_message: "Reviewed Dry Run Stage Output and Ready to Proceed ? ",
     manual_approval_allowed_users: ["priyanshu"],

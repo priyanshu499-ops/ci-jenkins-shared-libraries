@@ -37,24 +37,63 @@ def call(Map step_params) {
                                 source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}"
                         )
                 }
-            stage('Application Deployment(ArgoCD)') {
-                        argocd.deployment_factory(
-                                perform_argocd_deployment: "${get_params_value(enableOverride, step_params, 'perform_argocd_deployment')}",
-                                repo_url: "${repo_url}",
-                                app_name: "${get_params_value(enableOverride, step_params, 'app_name')}",
-                                argocd_credential_id: "${get_params_value(enableOverride, step_params, 'argocd_credential_id')}",
-                                argocd_server_env_name: "${get_params_value(enableOverride, step_params, 'argocd_server_env_name')}",
-                                eks_api_endpoint_env_name: "${get_params_value(enableOverride, step_params, 'eks_api_endpoint_env_name')}",
-                                deployment_strategy: "${get_params_value(enableOverride, step_params, 'deployment_strategy')}",
-                                helm_chart_path: "${get_params_value(enableOverride, step_params, 'deployment_strategy')}",
-                                values_file_path: "${get_params_value(enableOverride, step_params, 'values_file_path')}",
-                                prune_post_deployment: "${get_params_value(enableOverride, step_params, 'prune_post_deployment')}",
-                                repo_branch: "${get_params_value(enableOverride, step_params, 'repo_branch')}",
-                                source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
-                                dry_run: get_params_value(enableOverride, step_params, 'dry_run'),
-                                perform_health_check: get_params_value(enableOverride, step_params, 'perform_health_check')
-                        )
+
+            // ── Resolve dry_run and manual approval flags ──
+            def dryRun        = get_params_value(enableOverride, step_params, 'dry_run')?.toString()?.toBoolean() ?: false
+            def reqApproval   = get_params_value(enableOverride, step_params, 'require_manual_approval')?.toString()?.toBoolean() ?: false
+            def approvalMsg   = get_params_value(enableOverride, step_params, 'manual_approval_message') ?: 'Review Dry-Run output. Proceed with deployment?'
+            def allowedUsers  = get_params_value(enableOverride, step_params, 'manual_approval_allowed_users') ?: ''
+
+            // ── STAGE 1: DRY-RUN ──
+            if (dryRun) {
+                stage('Application Deployment(ArgoCD) [DRY-RUN]') {
+                    argocd.deployment_factory(
+                            perform_argocd_deployment: "${get_params_value(enableOverride, step_params, 'perform_argocd_deployment')}",
+                            repo_url: "${repo_url}",
+                            app_name: "${get_params_value(enableOverride, step_params, 'app_name')}",
+                            argocd_credential_id: "${get_params_value(enableOverride, step_params, 'argocd_credential_id')}",
+                            argocd_server_env_name: "${get_params_value(enableOverride, step_params, 'argocd_server_env_name')}",
+                            eks_api_endpoint_env_name: "${get_params_value(enableOverride, step_params, 'eks_api_endpoint_env_name')}",
+                            helm_chart_path: "${get_params_value(enableOverride, step_params, 'deployment_strategy')}",
+                            values_file_path: "${get_params_value(enableOverride, step_params, 'values_file_path')}",
+                            prune_post_deployment: "${get_params_value(enableOverride, step_params, 'prune_post_deployment')}",
+                            repo_branch: "${get_params_value(enableOverride, step_params, 'repo_branch')}",
+                            source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
+                            dry_run: true
+                    )
+                }
+
+                // ── STAGE 2: MANUAL APPROVAL ──
+                if (reqApproval) {
+                    stage('Manual Approval') {
+                        def submitter = (allowedUsers instanceof List) ? allowedUsers.join(',') : allowedUsers.toString()
+                        if (submitter) {
+                            input(message: approvalMsg, submitter: submitter, ok: 'Approve & Deploy')
+                        } else {
+                            input(message: approvalMsg, ok: 'Approve & Deploy')
+                        }
+                    }
+                }
             }
+
+            // ── STAGE 3: ACTUAL DEPLOYMENT ──
+            stage('Application Deployment(ArgoCD)') {
+                argocd.deployment_factory(
+                        perform_argocd_deployment: "${get_params_value(enableOverride, step_params, 'perform_argocd_deployment')}",
+                        repo_url: "${repo_url}",
+                        app_name: "${get_params_value(enableOverride, step_params, 'app_name')}",
+                        argocd_credential_id: "${get_params_value(enableOverride, step_params, 'argocd_credential_id')}",
+                        argocd_server_env_name: "${get_params_value(enableOverride, step_params, 'argocd_server_env_name')}",
+                        eks_api_endpoint_env_name: "${get_params_value(enableOverride, step_params, 'eks_api_endpoint_env_name')}",
+                        helm_chart_path: "${get_params_value(enableOverride, step_params, 'deployment_strategy')}",
+                        values_file_path: "${get_params_value(enableOverride, step_params, 'values_file_path')}",
+                        prune_post_deployment: "${get_params_value(enableOverride, step_params, 'prune_post_deployment')}",
+                        repo_branch: "${get_params_value(enableOverride, step_params, 'repo_branch')}",
+                        source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
+                        dry_run: false
+                )
+            }
+
 } catch (Exception e) {
             // Handle any exception or failure scenario
             currentBuild.result = 'FAILURE'
