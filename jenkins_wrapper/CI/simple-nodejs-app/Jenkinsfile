@@ -1,0 +1,69 @@
+@Library('ci-jenkins-shared-libraries@main') _
+def cipipeline = new opstree.ci.templates.nodejs_ci.nodejs_ci()
+
+node {
+  cipipeline.call([
+    // WORKSPACE MANAGEMENT
+    clean_workspace                  : true,
+    ignore_clean_workspace_failure   : false,
+    delete_dirs                      : false,
+    clean_when_build_aborted         : true,
+    clean_when_build_failed          : true,
+    clean_when_not_built             : true,
+    clean_when_build_succeed         : true,
+    clean_when_build_unstable        : true,
+    // VCS MANAGEMENT
+    repo_https_url                   : "https://github.com/priyanshu499-ops/simple-nodejs-app.git",
+    repo_ssh_url                     : "git@github.com:priyanshu499-ops/simple-nodejs-app.git",
+    repo_branch                      : params.BRANCH ?: "main",
+    repo_url_type                    : "http",
+    jenkins_git_creds_id             : "github-token",
+    source_code_path                 : "",
+    // DEPENDENCY SCANNING
+    dependency_check                          : 'true',
+    dependency_scan_tool                      : 'npm',
+    owasp_project_name                        : 'simple-nodejs-app',  
+    owasp_report_publish                      : 'true',
+    owasp_report_format                       : 'html',
+    fail_job_if_dependency_returned_exception : 'false',
+    // CREDS SCANNING (GITLEAKS)
+    gitleaks_check                   : true,
+    fail_job_if_leak_detected        : false,
+    gitleaks_report_format           : "json",
+    gitleaks_report_jenkins_publish  : true,
+    // BUILD ARTIFACT
+    perform_code_build               : true,
+    node_version                     : '18',
+    // UNIT TESTING
+    unit_testing_check               : 'true',
+    fail_job_if_unit_issue_detected  : 'false',
+    // STATIC CODE ANALYSIS
+    static_code_analysis_check       : false,
+    // BUILD DOCKERFILE
+    perform_build_dockerfile         : true,
+    dockerfile_location              : '/Dockerfile',
+    dockerfile_context               : '',
+    image_name                       : 'simple-nodejs-app',
+    image_tag                        : 'latest',
+    // IMAGE SCANNING (TRIVY)
+    image_scanning_check             : true,
+    scan_severity                    : 'HIGH,CRITICAL',
+    image_scanning_report_publish    : 'true',
+    // IMAGE SIZE VALIDATOR
+    image_size_validator_check       : true,
+    max_allowed_image_size           : '500',
+    fail_job_if_validation_fail      : 'false',
+    // PUBLISH ARTIFACT
+    artifact_publish_check           : true,
+    artifact_destination_type        : 'gcr',
+    docker_image_name                : 'simple-nodejs-app',
+    gcp_project_id                   : 'montra-490412',
+    gcr_hostname                     : 'asia-south2-docker.pkg.dev',
+    gcr_repository                   : 'dev-app-images',
+    //Deployment
+    enable_trigger_cd_pipeline       : true,
+    trigger_cd_pipeline_path         : "CD/simple-nodejs-app",
+    // NOTIFICATION
+    notification_enabled             : false
+  ])
+}
