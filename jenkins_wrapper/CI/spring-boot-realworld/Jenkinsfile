@@ -18,7 +18,7 @@ node {
     repo_branch                      : params.BRANCH ?: "main",
     repo_url_type                    : "http",
     jenkins_git_creds_id             : "github-token",
-    source_code_path                 : "",
+    source_code_path                 : "/spring-boot-realworld-example-app",
     // DEPENDENCY SCANNING
     dependency_check                          : 'true',
     dependency_scan_tool                      : 'owasp',
@@ -52,6 +52,7 @@ node {
     path_to_sonar_properties                : 'sonar-project.properties',
     fail_job_if_analysis_returned_exception : 'false',
     jenkins_sonarqube_token_creds_id        : 'SONARQUBE_TOKEN',
+    source_code_path                        : "", 
     // BUILD DOCKERFILE
     perform_build_dockerfile         : true,
     dockerfile_location              : '/Dockerfile',
