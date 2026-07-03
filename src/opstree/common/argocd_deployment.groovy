@@ -17,13 +17,20 @@ def deployment_factory(Map step_params) {
 def eks_deployment(Map step_params) {
     logger = new logger()
 
-    def app_name               = "${step_params.app_name}"
-    def argocd_credential_id   = "${step_params.argocd_credential_id}"
-    def argocd_server_env_name = "${step_params.argocd_server_env_name}"
-    def argocd_server_url      = env[argocd_server_env_name]
-    def prune_post_deployment  = "${step_params.prune_post_deployment}"
-    def perform_health_check   = step_params.perform_health_check?.toString()?.toBoolean() ?: false
-    def dry_run                = step_params.dry_run?.toString()?.toBoolean() ?: false
+
+    def app_type                = "${step_params.app_type}"
+    def app_env                 = "${step_params.app_env}"
+    def argocd_project          = "${app_type}-${app_env}"
+    def argocd_app_name         = "${step_params.app_name}-${app_env}"
+    // ---------------------------------------------------------
+
+    def app_name                = "${step_params.app_name}"
+    def argocd_credential_id    = "${step_params.argocd_credential_id}"
+    def argocd_server_env_name  = "${step_params.argocd_server_env_name}"
+    def argocd_server_url       = env[argocd_server_env_name]
+    def prune_post_deployment   = step_params.prune_post_deployment?.toString()?.toBoolean() ?: false
+    def perform_health_check    = step_params.perform_health_check?.toString()?.toBoolean() ?: false
+    def dry_run                 = step_params.dry_run?.toString()?.toBoolean() ?: false
 
     withCredentials([string(credentialsId: argocd_credential_id, variable: 'PASSWORD')]) {
 
@@ -34,6 +41,8 @@ def eks_deployment(Map step_params) {
         argocd login ${argocd_server_url} --username admin --password \$PASSWORD --insecure
         """
 
+        logger.logger('msg':"Target Application: ${argocd_app_name} | Project: ${argocd_project}", 'level':'INFO')
+
         if (params.image_tag) {
             logger.logger('msg':'Setting image tag and running ArgoCD operation...', 'level':'INFO')
             sh """
@@ -42,21 +51,26 @@ def eks_deployment(Map step_params) {
 
             if [ "${dry_run}" = "true" ]; then
                 echo "[DRY-RUN] Disabling auto-sync to prevent immediate deployment..."
-                argocd app set ${app_name} --sync-policy none
+                argocd app set ${argocd_app_name} --sync-policy none
 
                 echo "[DRY-RUN] Setting new image tag: ${params.image_tag}"
-                argocd app set ${app_name} --helm-set image.tag=${params.image_tag}
+                argocd app set ${argocd_app_name} --helm-set image.tag=${params.image_tag}
                 sleep 10
 
                 echo "=== DRY-RUN: Showing changes that will be applied ==="
-                argocd app get ${app_name} --refresh > /dev/null || true
-                PAGER="" argocd app diff ${app_name} --exit-code=false
+                argocd app get ${argocd_app_name} --refresh > /dev/null || true
+                PAGER="" argocd app diff ${argocd_app_name} --exit-code=false
                 echo "=== DRY-RUN Diff Complete ==="
             else
                 echo "[DEPLOY] Updating image tag: ${params.image_tag}"
-                argocd app set ${app_name} --sync-policy none
-                argocd app set ${app_name} --helm-set image.tag=${params.image_tag}
+                argocd app set ${argocd_app_name} --sync-policy none
+                argocd app set ${argocd_app_name} --helm-set image.tag=${params.image_tag}
                 echo "[INFO] App definition updated. Please sync manually from ArgoCD UI."
+
+                if [ "${prune_post_deployment}" = "true" ]; then
+                    echo "[INFO] prune_post_deployment=true, syncing with prune enabled..."
+                    argocd app sync ${argocd_app_name} --prune
+                fi
             fi
             """
         }
@@ -69,11 +83,16 @@ def eks_deployment(Map step_params) {
 
             if [ "${dry_run}" = "true" ]; then
                 echo "=== DRY-RUN: Showing changes that will be applied ==="
-                argocd app get ${app_name} --refresh > /dev/null || true
-                PAGER="" argocd app diff ${app_name} --exit-code=false
+                argocd app get ${argocd_app_name} --refresh > /dev/null || true
+                PAGER="" argocd app diff ${argocd_app_name} --exit-code=false
                 echo "=== DRY-RUN Diff Complete ==="
             else
                 echo "[INFO] App definition already up to date. Please sync manually from ArgoCD UI."
+
+                if [ "${prune_post_deployment}" = "true" ]; then
+                    echo "[INFO] prune_post_deployment=true, syncing with prune enabled..."
+                    argocd app sync ${argocd_app_name} --prune
+                fi
             fi
             """
         }
@@ -88,7 +107,7 @@ def eks_deployment(Map step_params) {
                 RETRIES=0
 
                 while [ \$RETRIES -lt \$MAX_RETRIES ]; do
-                    APP_STATUS=\$(argocd app get ${app_name} --output json | jq -r '.status.health.status')
+                    APP_STATUS=\$(argocd app get ${argocd_app_name} --output json | jq -r '.status.health.status')
                     echo "Application health status: \$APP_STATUS"
 
                     if [ "\$APP_STATUS" = "Healthy" ]; then
