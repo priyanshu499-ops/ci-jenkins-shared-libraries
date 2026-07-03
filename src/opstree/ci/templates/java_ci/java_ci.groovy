@@ -113,7 +113,6 @@ def call(Map step_params) {
                 }
 
                 if (get_params_value(enableOverride, step_params, 'static_code_analysis_check') != null && get_params_value(enableOverride, step_params, 'static_code_analysis_check').toBoolean()) {
-                        stage('Static Code Analysis') {
                     static_code_analysis.static_code_analysis_factory(
                                                         repo_url: "${repo_url}",
                                                         repo_url_type: "${get_params_value(enableOverride, step_params, 'repo_url_type')}",
@@ -128,7 +127,6 @@ def call(Map step_params) {
                                                         withmaven_globaltool_maven: "${get_params_value(enableOverride, step_params, 'withmaven_globaltool_maven')}",
                                                         source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}"
                                 )
-                        }
                 }
                 else {
                         echo 'Skipping Static Code Analysis stage as it is disabled.'
