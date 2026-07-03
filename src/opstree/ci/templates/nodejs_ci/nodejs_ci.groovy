@@ -179,7 +179,7 @@ def call(Map step_params) {
                         stage('Publish Artifact') {
                             publish.publish_factory(
                                                 repo_url: "${repo_url}",
-                                                artifact_publish_check: "${get_params_value(enableOverride, step_params, 'artifact_publish_check')}",
+                                                artifact_publish_check: get_params_value(enableOverride, step_params, 'artifact_publish_check')?.toString()?.toBoolean(),
                                                 artifact_destination_type: "${get_params_value(enableOverride, step_params, 'artifact_destination_type')}",
                                                 jenkins_aws_credentials_id: "${get_params_value(enableOverride, step_params, 'jenkins_aws_credentials_id')}",
                                                 docker_image_name: "${get_params_value(enableOverride, step_params, 'docker_image_name')}",

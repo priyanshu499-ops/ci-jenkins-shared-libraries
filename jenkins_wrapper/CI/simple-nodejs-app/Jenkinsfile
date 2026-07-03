@@ -20,12 +20,12 @@ node {
     jenkins_git_creds_id             : "github-token",
     source_code_path                 : "",
     // DEPENDENCY SCANNING
-    dependency_check                          : 'true',
+    dependency_check                          : true,
     dependency_scan_tool                      : 'owasp',
     owasp_project_name                        : 'simple-nodejs-app',  
-    owasp_report_publish                      : 'true',
+    owasp_report_publish                      : true,
     owasp_report_format                       : 'html',
-    fail_job_if_dependency_returned_exception : 'false',
+    fail_job_if_dependency_returned_exception : false,
     // CREDS SCANNING (GITLEAKS)
     gitleaks_check                   : true,
     fail_job_if_leak_detected        : false,
@@ -35,8 +35,8 @@ node {
     perform_code_build               : true,
     node_version                     : '18',
     // UNIT TESTING
-    unit_testing_check               : 'true',
-    fail_job_if_unit_issue_detected  : 'false',
+    unit_testing_check               : true,
+    fail_job_if_unit_issue_detected  : false,
     // STATIC CODE ANALYSIS
     static_code_analysis_check       : false,
     // BUILD DOCKERFILE
@@ -48,11 +48,11 @@ node {
     // IMAGE SCANNING (TRIVY)
     image_scanning_check             : true,
     scan_severity                    : 'HIGH,CRITICAL',
-    image_scanning_report_publish    : 'true',
+    image_scanning_report_publish    : true,
     // IMAGE SIZE VALIDATOR
     image_size_validator_check       : true,
     max_allowed_image_size           : '500',
-    fail_job_if_validation_fail      : 'false',
+    fail_job_if_validation_fail      : false,
     // PUBLISH ARTIFACT
     artifact_publish_check           : true,
     artifact_destination_type        : 'gcr',
