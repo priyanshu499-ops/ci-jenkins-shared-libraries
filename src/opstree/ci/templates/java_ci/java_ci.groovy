@@ -113,6 +113,7 @@ def call(Map step_params) {
                 }
 
                 if (get_params_value(enableOverride, step_params, 'static_code_analysis_check') != null && get_params_value(enableOverride, step_params, 'static_code_analysis_check').toBoolean()) {
+                        stage('Static Code Analysis') {
                     static_code_analysis.static_code_analysis_factory(
                                                         repo_url: "${repo_url}",
                                                         repo_url_type: "${get_params_value(enableOverride, step_params, 'repo_url_type')}",
