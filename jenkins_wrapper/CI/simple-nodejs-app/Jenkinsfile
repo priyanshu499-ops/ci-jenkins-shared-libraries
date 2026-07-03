@@ -21,7 +21,7 @@ node {
     source_code_path                 : "",
     // DEPENDENCY SCANNING
     dependency_check                          : 'true',
-    dependency_scan_tool                      : 'npm',
+    dependency_scan_tool                      : 'owasp',
     owasp_project_name                        : 'simple-nodejs-app',  
     owasp_report_publish                      : 'true',
     owasp_report_format                       : 'html',

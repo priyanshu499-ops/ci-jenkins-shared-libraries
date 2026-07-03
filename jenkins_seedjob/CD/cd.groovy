@@ -9,7 +9,7 @@ def cdJobs = [
         url        : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
         credentials: 'github-token',
         branch     : 'main',
-        scriptPath : 'jenkins_wrapper/CD/spring-boot-realworld/Jenkinsfile'
+        scriptPath : 'jenkins_wrapper/CD/simple-nodejs-app/Jenkinsfile'
     ]
 ]
 
