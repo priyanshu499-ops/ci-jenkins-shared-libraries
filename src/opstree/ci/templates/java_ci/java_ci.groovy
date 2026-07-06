@@ -151,7 +151,7 @@ def call(Map step_params) {
                                         java_version : "${get_params_value(enableOverride, step_params, 'java_version')}"
 
                                 )
-                        }
+                        }   }
                 }
 
                 else {
