@@ -1,5 +1,5 @@
 @Library('ci-jenkins-shared-libraries@main') _
-def cipipeline = new opstree.ci.templates.nodejs_ci.nodejs_ci()
+def cipipeline = new opstree.ci.templates.java_ci.java_ci()
 
 node {
   cipipeline.call([
