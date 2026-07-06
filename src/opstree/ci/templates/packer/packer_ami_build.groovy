@@ -109,13 +109,13 @@ def call(Map step_params) {
             if (get_params_value(enableOverride, step_params, 'clean_workspace') != null && get_params_value(enableOverride, step_params, 'clean_workspace').toBoolean()) {
                         workspace.workspace_management(
                                 clean_workspace: "${get_params_value(enableOverride, step_params, 'clean_workspace')}",
-                                ignore_clean_workspace_failure: "${get_params_value(enableOverride, step_params, 'ignore_clean_workspace_failure')}",
-                                delete_dirs: "${get_params_value(enableOverride, step_params, 'delete_dirs')}",
-                                clean_when_build_aborted: "${get_params_value(enableOverride, step_params, 'clean_when_build_aborted')}",
-                                clean_when_build_failed: "${get_params_value(enableOverride, step_params, 'clean_when_build_failed')}",
-                                clean_when_not_built: "${get_params_value(enableOverride, step_params, 'clean_when_not_built')}",
-                                clean_when_build_succeed: "${get_params_value(enableOverride, step_params, 'clean_when_build_succeed')}",
-                                clean_when_build_unstable: "${get_params_value(enableOverride, step_params, 'clean_when_build_unstable')}"
+                                ignore_clean_workspace_failure: "${get_params_value(enableOverride, step_params, 'ignore_clean_workspace_failure') ?: 'false'}",
+                                delete_dirs: "${get_params_value(enableOverride, step_params, 'delete_dirs') ?: 'false'}",
+                                clean_when_build_aborted: "${get_params_value(enableOverride, step_params, 'clean_when_build_aborted') ?: 'true'}",
+                                clean_when_build_failed: "${get_params_value(enableOverride, step_params, 'clean_when_build_failed') ?: 'true'}",
+                                clean_when_not_built: "${get_params_value(enableOverride, step_params, 'clean_when_not_built') ?: 'true'}",
+                                clean_when_build_succeed: "${get_params_value(enableOverride, step_params, 'clean_when_build_succeed') ?: 'true'}",
+                                clean_when_build_unstable: "${get_params_value(enableOverride, step_params, 'clean_when_build_unstable') ?: 'true'}"
                         )
             }
         }

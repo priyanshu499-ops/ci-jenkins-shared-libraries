@@ -5,13 +5,6 @@ node {
   cipipeline.call([
     // WORKSPACE MANAGEMENT
     clean_workspace                  : true,
-    ignore_clean_workspace_failure   : false,
-    delete_dirs                      : false,
-    clean_when_build_aborted         : true,
-    clean_when_build_failed          : true,
-    clean_when_not_built             : true,
-    clean_when_build_succeed         : true,
-    clean_when_build_unstable        : true,
     // VCS MANAGEMENT
     repo_https_url                   : "https://bitbucket.org/montra_app/auth-service.git",
     repo_ssh_url                     : "git@bitbucket.org:montra_app/auth-service.git",
