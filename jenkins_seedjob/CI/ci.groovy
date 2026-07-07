@@ -71,7 +71,7 @@ def ciJobs = [
         url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
         credentials  : 'github-token',
         branch       : 'main',
-        scriptPath   : 'jenkins_wrapper/CI/'sdk-instacard-frontend/Jenkinsfile',
+        scriptPath   : 'jenkins_wrapper/CI/sdk-instacard-frontend/Jenkinsfile',
         owner        : 'CI-CD Team',
         logRotatorNum:  5,
         parameters   : [
