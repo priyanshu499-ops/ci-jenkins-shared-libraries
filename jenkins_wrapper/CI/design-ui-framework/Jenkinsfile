@@ -1,5 +1,5 @@
 @Library('ci-jenkins-shared-libraries@main') _
-def cipipeline = new opstree.ci.templates.java_ci.java_ci()
+def cipipeline = new opstree.ci.templates.nodejs_ci.nodejs_ci()
 
 node {
   cipipeline.call([
@@ -27,14 +27,7 @@ node {
     gitleaks_report_jenkins_publish  : true,
     // BUILD ARTIFACT
     perform_code_build               : true,
-    build_tool                       : 'gradle',   // single quotes = plain String, no GString issue
-    gradle_command                   : 'build',
-    gradle_build_file_location       : '.',
-    java_version                     : '21',       // single quotes = plain String
-    codeartifact_dependency          : false,
-    codeartifact_domain              : '',
-    codeartifact_owner               : '',
-    pom_location                     : '',
+    node_version                     : '20',
     // UNIT TESTING
     unit_testing_check               : 'true',     // must be String 'true', not boolean true
     fail_job_if_unit_issue_detected  : 'false',    // must be String 'false', not boolean false

@@ -22,7 +22,79 @@ def cdJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
         ]
-    ]
+    ],
+    'sdk-instacard-frontend': [
+        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
+        credentials  : 'github-token',
+        branch       : 'main',
+        scriptPath   : 'jenkins_wrapper/CD/sdk-instacard-frontend/Jenkinsfile',
+        owner        : 'priyanshu499-ops',
+        logRotatorNum: 5, // keep only last 5 builds' history
+        parameters   : [
+            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
+            [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
+        ]
+    ],
+    'design-ui-framework': [
+        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
+        credentials  : 'github-token',
+        branch       : 'main',
+        scriptPath   : 'jenkins_wrapper/CD/design-ui-framework/Jenkinsfile',
+        owner        : 'priyanshu499-ops',
+        logRotatorNum: 5, // keep only last 5 builds' history
+        parameters   : [
+            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
+            [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
+        ]
+    ],
+    'virtualcard-service': [
+        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
+        credentials  : 'github-token',
+        branch       : 'main',
+        scriptPath   : 'jenkins_wrapper/CD/virtualcard-service/Jenkinsfile',
+        owner        : 'priyanshu499-ops',
+        logRotatorNum: 5, // keep only last 5 builds' history
+        parameters   : [
+            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
+            [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
+        ]
+    ],
+    'instacard-user-service': [
+        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
+        credentials  : 'github-token',
+        branch       : 'main',
+        scriptPath   : 'jenkins_wrapper/CD/instacard-user-service/Jenkinsfile',
+        owner        : 'priyanshu499-ops',
+        logRotatorNum: 5, // keep only last 5 builds' history
+        parameters   : [
+            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
+            [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
+        ]
+    ],
+    'instacard-mock-apis': [
+        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
+        credentials  : 'github-token',
+        branch       : 'main',
+        scriptPath   : 'jenkins_wrapper/CD/instacard-mock-apis/Jenkinsfile',
+        owner        : 'priyanshu499-ops',
+        logRotatorNum: 5, // keep only last 5 builds' history
+        parameters   : [
+            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
+            [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
+        ]
+    ],
+    'auth-service': [
+        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
+        credentials  : 'github-token',
+        branch       : 'main',
+        scriptPath   : 'jenkins_wrapper/CD/auth-service/Jenkinsfile',
+        owner        : 'priyanshu499-ops',
+        logRotatorNum: 5, // keep only last 5 builds' history
+        parameters   : [
+            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
+            [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
+        ]
+    ],
 ]
 
 cdJobs.each { jobName, config ->
