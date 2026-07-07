@@ -30,6 +30,10 @@ def build_artifact(Map step_params) {
     def gradle_command = "${step_params.gradle_command}"
     def gradle_build_file_location = "${step_params.gradle_build_file_location}"
 
+    // gradle_version can be set explicitly; if not, a sensible default is chosen per java_version
+    def gradle_version_default = java_version == '11' ? '7.6.4' : (java_version == '17' ? '8.7' : '8.14.4')
+    def gradle_version = step_params.gradle_version ?: gradle_version_default
+
     // Set the mvn_settings_path, default to '~/.m2/settings.xml' if not provided
     def mvn_settings_path
     if (step_params.mvn_settings_path != null) {
@@ -68,17 +72,10 @@ def build_artifact(Map step_params) {
                 }
             }
         } else if (build_tool == 'gradle') {
-            // Adding Gradle build tool support
-            if (java_version == '11') {
-                sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app/ -w /app gradle:7.5-jdk11 sh -c "cd /app/${gradle_build_file_location} && gradle ${gradle_command}" """
-                logger.logger('msg':'Build successful', 'level':'INFO')
-            } else if (java_version == '17') {
-                sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app/ -w /app gradle:7.5-jdk17 sh -c "cd /app/${gradle_build_file_location} && gradle ${gradle_command}" """
-                logger.logger('msg':'Build successful', 'level':'INFO')
-            } else if (java_version == '21') {
-                sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app/ -w /app gradle:8.14.4-jdk21 sh -c "cd /app/${gradle_build_file_location} && gradle ${gradle_command}" """
-                logger.logger('msg':'Build successful', 'level':'INFO')
-            }
+            // Gradle version and Java version are independently configurable
+            // Docker image: gradle:<gradle_version>-jdk<java_version>
+            sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app/ -w /app gradle:${gradle_version}-jdk${java_version} sh -c "cd /app/${gradle_build_file_location} && gradle ${gradle_command}" """
+            logger.logger('msg':'Build successful', 'level':'INFO')
         } else {
             logger.logger('msg':"Choose appropriate build tool!!! Build Failed Error Details: ${e}", 'level':'ERROR')
             error()
