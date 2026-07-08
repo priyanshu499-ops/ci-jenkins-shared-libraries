@@ -30,7 +30,8 @@ node {
     build_tool                       : 'gradle',   // single quotes = plain String, no GString issue
     gradle_command                   : 'build',
     gradle_build_file_location       : '.',
-    java_version                     : '21',       // single quotes = plain String
+    java_version                     : '21',       // JDK version inside container
+    gradle_version                   : '8.14.4',   // Gradle version — docker image: gradle:8.14.4-jdk21
     codeartifact_dependency          : false,
     codeartifact_domain              : '',
     codeartifact_owner               : '',

@@ -5,17 +5,10 @@ node {
   cipipeline.call([
     // WORKSPACE MANAGEMENT
     clean_workspace                  : true,
-    ignore_clean_workspace_failure   : false,
-    delete_dirs                      : false,
-    clean_when_build_aborted         : true,
-    clean_when_build_failed          : true,
-    clean_when_not_built             : true,
-    clean_when_build_succeed         : true,
-    clean_when_build_unstable        : true,
     // VCS MANAGEMENT
     repo_https_url                   : "https://github.com/priyanshu499-ops/spring-boot-realworld-example-app.git",
     repo_ssh_url                     : "https://github.com/priyanshu499-ops/spring-boot-realworld-example-app.git",
-    repo_branch                      : params.BRANCH ?: "main",
+    repo_branch                      : params.BRANCH ?: "master",
     repo_url_type                    : "http",
     jenkins_git_creds_id             : "github-token",
     source_code_path                 : "/spring-boot-realworld-example-app",
