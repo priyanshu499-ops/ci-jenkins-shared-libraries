@@ -15,7 +15,7 @@ node {
     // DEPENDENCY SCANNING
     dependency_check                          : 'true',
     dependency_scan_tool                      : 'owasp',
-    owasp_project_name                        : 'spring-boot-gradle',  
+    owasp_project_name                        : 'auth-service',  
     owasp_report_publish                      : 'true',
     owasp_report_format                       : 'html',
     fail_job_if_dependency_returned_exception : 'false',
@@ -28,7 +28,7 @@ node {
     // BUILD ARTIFACT
     perform_code_build               : true,
     build_tool                       : 'gradle',   // single quotes = plain String, no GString issue
-    gradle_command                   : 'build',
+    gradle_command                   : 'build -x jar',
     gradle_build_file_location       : '.',
     java_version                     : '21',       // single quotes = plain String
     codeartifact_dependency          : false,
@@ -66,7 +66,7 @@ node {
     // PUBLISH ARTIFACT
     artifact_publish_check           : true,
     artifact_destination_type        : 'gcr',
-    docker_image_name                : 'spring-boot-realworld-app',
+    docker_image_name                : 'auth-service',
     gcp_project_id                   : 'montra-490412',
     gcr_hostname                     : 'asia-south2-docker.pkg.dev',
     gcr_repository                   : 'dev-app-images',
