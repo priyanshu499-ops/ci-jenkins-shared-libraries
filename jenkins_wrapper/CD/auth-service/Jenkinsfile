@@ -26,7 +26,8 @@ node {
     // Argocd
     perform_argocd_deployment: true,
     app_name: 'auth-service',
-    app_type: 'apps',
+    app_type: '',               // not used for project name — use argocd_project instead
+    argocd_project: 'dev',      // matches the actual ArgoCD project (was wrongly 'apps-dev')
     app_env: 'dev',
     argocd_credential_id: 'argocd-cred',
     argocd_server_env_name: 'ARGOCD_URL',

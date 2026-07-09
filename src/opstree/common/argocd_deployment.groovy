@@ -22,7 +22,11 @@ def eks_deployment(Map step_params) {
     def raw_app_env            = step_params.app_env?.toString()?.trim()
     def app_type               = (raw_app_type && raw_app_type != 'null') ? raw_app_type : ""
     def app_env                = (raw_app_env  && raw_app_env  != 'null') ? raw_app_env  : ""
-    def argocd_project         = (app_type && app_env) ? "${app_type}-${app_env}" : (app_env ?: "default")
+    // argocd_project: use explicit override if provided, else build from app_type+app_env, else just app_env
+    def raw_argocd_project     = step_params.argocd_project?.toString()?.trim()
+    def argocd_project         = (raw_argocd_project && raw_argocd_project != 'null')
+                                    ? raw_argocd_project
+                                    : (app_type && app_env) ? "${app_type}-${app_env}" : (app_env ?: "default")
     def argocd_app_name        = app_env ? "${step_params.app_name}-${app_env}" : "${step_params.app_name}"
     // ─────────────────────────────────────────────
 
