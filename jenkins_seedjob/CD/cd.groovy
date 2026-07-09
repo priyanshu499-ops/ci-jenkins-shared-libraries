@@ -95,6 +95,18 @@ def cdJobs = [
             [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
         ]
     ],
+     'apigateway': [
+        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
+        credentials  : 'github-token',
+        branch       : 'main',
+        scriptPath   : 'jenkins_wrapper/CD/apigateway/Jenkinsfile',
+        owner        : 'priyanshu499-ops',
+        logRotatorNum: 5, // keep only last 5 builds' history
+        parameters   : [
+            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
+            [name: 'image_tag', defaultValue: 'latest', description: 'Docker image tag to deploy']
+        ]
+    ],
 ]
 
 cdJobs.each { jobName, config ->
