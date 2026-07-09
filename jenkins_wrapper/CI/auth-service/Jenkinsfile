@@ -50,21 +50,21 @@ node {
     jenkins_sonarqube_token_creds_id        : 'SONARQUBE_TOKEN',
     source_code_path                        : "", 
     // BUILD DOCKERFILE
-    perform_build_dockerfile         : false,
+    perform_build_dockerfile         : true,
     dockerfile_location              : '/Dockerfile',
     dockerfile_context               : '',
-    image_name                       : 'spring-boot-realworld-app',
+    image_name                       : 'auth-service',
     image_tag                        : 'latest',
     // IMAGE SCANNING (TRIVY)
-    image_scanning_check             : false,
+    image_scanning_check             : true,
     scan_severity                    : 'HIGH,CRITICAL',
     image_scanning_report_publish    : 'true',
     // IMAGE SIZE VALIDATOR
-    image_size_validator_check       : false,
+    image_size_validator_check       : true,
     max_allowed_image_size           : '500',
     fail_job_if_validation_fail      : 'false',
     // PUBLISH ARTIFACT
-    artifact_publish_check           : false,
+    artifact_publish_check           : true,
     artifact_destination_type        : 'gcr',
     docker_image_name                : 'spring-boot-realworld-app',
     gcp_project_id                   : 'montra-490412',
@@ -72,8 +72,8 @@ node {
     gcr_repository                   : 'dev-app-images',
 
     //Deployment
-    enable_trigger_cd_pipeline       : false,
-    trigger_cd_pipeline_path         : "CD/spring-boot-realworld",
+    enable_trigger_cd_pipeline       : true,
+    trigger_cd_pipeline_path         : "CD/auth-service",
     image_tag_build_param            : 'image_tag',
 
     //Deployment
