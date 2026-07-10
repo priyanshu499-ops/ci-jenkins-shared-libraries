@@ -58,7 +58,7 @@ node {
 
         // BUILD DOCKERFILE
         perform_build_dockerfile : true,
-        dockerfile_location      : 'Dockerfile',
+        dockerfile_location      : '/Dockerfile',
         dockerfile_context       : '',
         image_name               : 'auth-service',
         image_tag                : 'latest',

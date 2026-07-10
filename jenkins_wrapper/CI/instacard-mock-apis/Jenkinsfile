@@ -59,7 +59,7 @@ node {
 
         // BUILD DOCKERFILE
         perform_build_dockerfile : true,
-        dockerfile_location      : 'Dockerfile',
+        dockerfile_location      : '/Dockerfile',
         dockerfile_context       : '',
         image_name               : 'instacard-mock-apis',
         image_tag                : 'latest',
