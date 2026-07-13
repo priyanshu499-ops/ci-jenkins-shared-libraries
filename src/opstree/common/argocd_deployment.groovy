@@ -50,11 +50,17 @@ def eks_deployment(Map step_params) {
                                     ? "${raw_app_type}-${app_env}"
                                     : "${app_env}"
 
-    // eks_api_endpoint: from env var if set, else default to in-cluster
+    // destination_server: direct URL takes highest priority
+    //   1. destination_server param (direct URL in Jenkinsfile) — highest priority
+    //   2. eks_api_endpoint_env_name (env var lookup) — fallback
+    //   3. https://kubernetes.default.svc (in-cluster) — last resort
+    def raw_destination_server    = step_params.destination_server?.toString()?.trim()
     def eks_api_endpoint_env_name = step_params.eks_api_endpoint_env_name?.toString()?.trim() ?: ""
-    eks_api_endpoint = (eks_api_endpoint_env_name && env[eks_api_endpoint_env_name])
-                         ? env[eks_api_endpoint_env_name]
-                         : "https://kubernetes.default.svc"
+    eks_api_endpoint = (raw_destination_server && raw_destination_server != 'null')
+                         ? raw_destination_server
+                         : (eks_api_endpoint_env_name && env[eks_api_endpoint_env_name])
+                             ? env[eks_api_endpoint_env_name]
+                             : "https://kubernetes.default.svc"
 
     def finalTag = params.custom_image_tag?.trim() ?
                params.custom_image_tag.trim() :

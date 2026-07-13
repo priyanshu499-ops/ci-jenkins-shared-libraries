@@ -35,6 +35,7 @@ node {
     values_file_path: 'applications/dev/instacard-mock-apis-values.yaml',
     prune_post_deployment: true,
     perform_health_check: false,
+    destination_server: 'https://gke-f430e707bd3f453ab4a7f498543e5de05754-433218788168.asia-south2.gke.goog',
 
     dry_run: true,
     require_manual_approval: true,
