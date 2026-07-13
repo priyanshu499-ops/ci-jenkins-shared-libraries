@@ -28,28 +28,25 @@ def trivy(Map step_params) {
         sh "mkdir -p ${trivyCacheDir}"
         sh "sudo chmod -R 777 ${WORKSPACE}/trivy ${trivyCacheDir}"
 
-        // ── Java DB freshness check ──────────────────────────────────────────
-        // trivy-java-db is 883 MiB and takes 2+ min to download.
-        // Skip the update if the local copy is less than 24 hours old to avoid
-        // intermittent ghcr.io connectivity failures on every build.
+        // ── Java DB existence check ──────────────────────────────────────────
+        // trivy-java-db is ~892 MiB and takes 2+ min to download.
+        // Once downloaded, reuse it indefinitely — only re-download if the DB
+        // is completely absent (first run or manually cleared).
+        // The 24-hour staleness window has been intentionally removed to avoid
+        // intermittent OCI download failures on ghcr.io during every stale build.
         def skipJavaDbFlag = sh(script: """
             JAVA_DB_META="${trivyCacheDir}/fanal/javadb/metadata.json"
             if [ -f "\$JAVA_DB_META" ]; then
-                DB_AGE_HOURS=\$(( ( \$(date +%s) - \$(stat -c %Y "\$JAVA_DB_META" 2>/dev/null || echo 0) ) / 3600 ))
-                if [ "\$DB_AGE_HOURS" -lt "24" ] 2>/dev/null; then
-                    echo "--skip-java-db-update"
-                else
-                    echo ""
-                fi
+                echo "--skip-java-db-update"
             else
                 echo ""
             fi
         """, returnStdout: true).trim()
 
         if (skipJavaDbFlag == '--skip-java-db-update') {
-            logger.logger('msg':'Trivy Java DB is fresh (< 24h) - skipping Java DB download', 'level':'INFO')
+            logger.logger('msg':'Trivy Java DB already exists on disk - skipping Java DB download (reusing cached copy)', 'level':'INFO')
         } else {
-            logger.logger('msg':'Trivy Java DB is stale or missing - downloading Java DB', 'level':'INFO')
+            logger.logger('msg':'Trivy Java DB not found - downloading Java DB for the first time', 'level':'INFO')
         }
 
         try {
