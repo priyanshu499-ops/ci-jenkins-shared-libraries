@@ -31,7 +31,7 @@ node {
     argocd_credential_id: 'argocd-cred',
     argocd_server_env_name: 'ARGOCD_URL',
     deployment_strategy: 'helm',
-    values_file_path: '../applications/dev/virtualcard-service.yaml',
+    values_file_path: '../applications/dev/virtualcard-service-values.yml',
     prune_post_deployment: true,
     perform_health_check: false,
 
