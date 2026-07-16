@@ -30,6 +30,7 @@ def eks_deployment(Map step_params) {
     helm_chart_path        = "${step_params.helm_chart_path}"
     repo_branch            = "${step_params.repo_branch}"
     dry_run                = "${step_params.dry_run}"
+    def perform_health_check = step_params.perform_health_check?.toString()?.toBoolean() != false
 
     // values_file_path: passed directly from Jenkinsfile (e.g. ../applications/dev/auth-service.yaml)
     values_file_path       = "${step_params.values_file_path}"
@@ -155,6 +156,7 @@ spec:
 
             sleep(20)
 
+            def shouldReturn = false
             try {
 
                 if (dry_run.toBoolean()) {
@@ -165,8 +167,10 @@ spec:
             } catch (Exception e) {
 
                 echo "Changes detected. Please review and decide. "
-                return
+                shouldReturn = true
             }
+
+            if (shouldReturn) { return }
 
             if (!dry_run.toBoolean()) {
 
@@ -185,30 +189,37 @@ spec:
         }
 
         logger.logger('msg':'Created or updated ArgoCD application...', 'level':'INFO')
-        logger.logger('msg':'Checking Application Health check. Please wait for sometime...', 'level':'INFO')
-        sh """
-                MAX_RETRIES=10
-                RETRY_INTERVAL=30 # in seconds
-                RETRIES=0
 
-                while [ \$RETRIES -lt \$MAX_RETRIES ]; do
-                    APP_STATUS=\$(argocd app get ${app_name}-${app_env} --output json | jq -r '.status.health.status')
+        if (!dry_run.toBoolean() && perform_health_check) {
+            logger.logger('msg':'Checking Application Health check. Please wait for sometime...', 'level':'INFO')
+            sh """
+                    MAX_RETRIES=10
+                    RETRY_INTERVAL=30 # in seconds
+                    RETRIES=0
 
-                    echo "Application health status: \$APP_STATUS"
+                    while [ \$RETRIES -lt \$MAX_RETRIES ]; do
+                        APP_STATUS=\$(argocd app get ${app_name}-${app_env} --output json | jq -r '.status.health.status')
 
-                    if [ "\$APP_STATUS" = "Healthy" ]; then
-                        echo "Application is Healthy."
-                        exit 0
-                    else
-                        echo "Application is not Healthy yet. Retrying in \${RETRY_INTERVAL} seconds..."
-                        sleep \${RETRY_INTERVAL}
-                        RETRIES=\$((RETRIES + 1))
-                    fi
-                done
+                        echo "Application health status: \$APP_STATUS"
 
-                echo "Application did not become healthy within the expected time."
-                exit 1
-                """
+                        if [ "\$APP_STATUS" = "Healthy" ]; then
+                            echo "Application is Healthy."
+                            exit 0
+                        else
+                            echo "Application is not Healthy yet. Retrying in \${RETRY_INTERVAL} seconds..."
+                            sleep \${RETRY_INTERVAL}
+                            RETRIES=\$((RETRIES + 1))
+                        fi
+                    done
+
+                    echo "Application did not become healthy within the expected time."
+                    exit 1
+                    """
+        } else if (dry_run.toBoolean()) {
+            logger.logger('msg':'Skipping health check as Dry run is enabled', 'level':'WARN')
+        } else {
+            logger.logger('msg':'Health check is disabled (perform_health_check=false)', 'level':'INFO')
+        }
 
         logger.logger('msg':'Application Deployed successfully', 'level':'INFO')
     }
