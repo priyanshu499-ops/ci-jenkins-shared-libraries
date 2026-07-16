@@ -77,7 +77,7 @@ node {
         artifact_publish_check   : true,
         artifact_destination_type: 'gcr',
         docker_image_name        : 'instacard-user-service',
-        gcp_project_id           : 'montra-490412',
+        gcp_project_id           : 'development-498908',
         gcr_hostname             : 'asia-south2-docker.pkg.dev',
         gcr_repository           : 'dev-app-images',
 

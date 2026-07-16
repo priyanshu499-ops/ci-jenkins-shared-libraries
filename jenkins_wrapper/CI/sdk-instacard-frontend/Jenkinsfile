@@ -58,14 +58,14 @@ node {
     // PUBLISH ARTIFACT
     artifact_publish_check           : false,
     artifact_destination_type        : 'gcr',
-    docker_image_name                : 'spring-boot-realworld-app',
-    gcp_project_id                   : 'montra-490412',
+    docker_image_name                : 'sdk-instacard-frontend',
+    gcp_project_id                   : 'development-498908',
     gcr_hostname                     : 'asia-south2-docker.pkg.dev',
     gcr_repository                   : 'dev-app-images',
 
     //Deployment
     enable_trigger_cd_pipeline       : false,
-    trigger_cd_pipeline_path         : "CD/spring-boot-realworld",
+    trigger_cd_pipeline_path         : "CD/sdk-instacard-frontend",
     image_tag_build_param            : 'image_tag',
 
     //Deployment
