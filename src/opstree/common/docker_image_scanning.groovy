@@ -58,11 +58,18 @@ def trivy(Map step_params) {
             if (imageExists) {
                 logger.logger('msg':'Image found, proceeding with Trivy scan', 'level':'INFO')
 
-                // ── Copy render scripts into workspace ──────────────────────
-                // These scripts convert the raw JSON output into a beautiful HTML report
-                sh "mkdir -p ${WORKSPACE}/trivy"
-                sh "cp -R ${JENKINS_HOME}/workspace/${JOB_NAME}@libs/ci-jenkins-shared-libraries/resources/trivy/render/* ${WORKSPACE}/trivy/ || cp -R resources/trivy/render/* ${WORKSPACE}/trivy/"
-                sh "chmod +x ${WORKSPACE}/trivy/inject.sh"
+                // ── Write the render resources into trivy dir ───────────────────
+                // We use libraryResource because shared library resources are not
+                // automatically present in the agent workspace checkout.
+                dir("${WORKSPACE}/trivy") {
+                    writeFile file: 'report.html',
+                              text: libraryResource('trivy/render/report.html')
+                    writeFile file: 'report.css',
+                              text: libraryResource('trivy/render/report.css')
+                    writeFile file: 'inject.sh',
+                              text: libraryResource('trivy/render/inject.sh')
+                    sh 'chmod +x inject.sh'
+                }
 
 
                 // --scanners vuln   → disable secret scanning (saves ~30s and avoids
