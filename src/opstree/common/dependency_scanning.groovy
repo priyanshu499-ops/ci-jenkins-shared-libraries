@@ -136,13 +136,47 @@ def dependency_scan(Map step_params) {
         }
 
         if (owasp_report_publish == 'true') {
-            logger.logger('msg':'Publishing OWASP Dependency Scan Report', 'level':'INFO')
-            dependency_check_reports.publish(
-                'dc_publisher' : 'true',
-                'report_dir'   : "${WORKSPACE}/owasp-reports",
-                'report_file'  : "dependency-check-report.${owasp_report_format}",
-                'report_name'  : 'OWASP Dependency Check Report'
-            )
+            logger.logger('msg':'Generating Human-Readable OWASP Dependency Check Report', 'level':'INFO')
+
+            // ── Write the render resources into owasp-reports dir ──────────
+            dir("${WORKSPACE}/owasp-reports") {
+                writeFile file: 'report.html',
+                          text: libraryResource('owasp/render/report.html')
+                writeFile file: 'report.css',
+                          text: libraryResource('owasp/render/report.css')
+                writeFile file: 'inject.sh',
+                          text: libraryResource('owasp/render/inject.sh')
+                sh 'chmod +x inject.sh'
+
+                // ── Generate the custom HTML report from the XML output ─────
+                try {
+                    sh './inject.sh'
+                    logger.logger('msg':'Custom OWASP HTML report generated: owasp_report.html', 'level':'INFO')
+                } catch (Exception renderEx) {
+                    logger.logger('msg':"Custom OWASP report render failed (will fall back to default HTML): ${renderEx}", 'level':'WARN')
+                }
+            }
+
+            // ── Publish custom human-readable report ───────────────────────
+            def customReportExists = fileExists("${WORKSPACE}/owasp-reports/owasp_report.html")
+            if (customReportExists) {
+                dependency_check_reports.publish(
+                    'dc_publisher' : 'true',
+                    'report_dir'   : "${WORKSPACE}/owasp-reports",
+                    'report_file'  : 'owasp_report.html',
+                    'report_name'  : 'OWASP Dependency Check Report'
+                )
+            } else {
+                // Fallback: publish the raw DC HTML report
+                logger.logger('msg':'Falling back to default dependency-check HTML report', 'level':'WARN')
+                dependency_check_reports.publish(
+                    'dc_publisher' : 'true',
+                    'report_dir'   : "${WORKSPACE}/owasp-reports",
+                    'report_file'  : "dependency-check-report.${owasp_report_format}",
+                    'report_name'  : 'OWASP Dependency Check Report'
+                )
+            }
+
         } else {
             logger.logger('msg':'OWASP Report Publishing Skipped', 'level':'INFO')
         }
