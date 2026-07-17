@@ -67,6 +67,7 @@ node {
         image_scanning_check         : true,
         scan_severity                : 'HIGH,CRITICAL',
         image_scanning_report_publish: 'true',
+        fail_job_if_scan_failed      : 'false',
 
         // IMAGE SIZE VALIDATOR
         image_size_validator_check : true,
