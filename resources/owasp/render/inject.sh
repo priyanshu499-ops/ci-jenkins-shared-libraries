@@ -128,28 +128,27 @@ for dep in deps:
         ev_name = txt(ev, 'name',   default='')
         ev_val  = txt(ev, 'value',  default='')
         row = ('<tr>'
-               '<td style="color:#94a3b8;">' + ev_type + '</td>'
-               '<td style="color:#94a3b8;">' + ev_src  + '</td>'
-               '<td style="color:#cbd5e1;">' + ev_name + '</td>'
-               '<td style="color:#e2e8f0;">' + ev_val  + '</td>'
-               '<td style="color:#7dd3fc;">' + ev_conf + '</td>'
+               '<td>' + ev_type + '</td>'
+               '<td>' + ev_src  + '</td>'
+               '<td>' + ev_name + '</td>'
+               '<td>' + ev_val  + '</td>'
+               '<td>' + ev_conf + '</td>'
                '</tr>')
         ev_rows_list.append(row)
 
     ev_tbody = ''.join(ev_rows_list)
     if ev_tbody:
-        ev_table = ('<table style="width:100%;border-collapse:collapse;margin-top:8px;'
-                    'background:#060f1e;border:1px solid #1e293b;border-radius:4px;">'
+        ev_table = ('<table class="evidence-table">'
                     '<thead><tr>'
-                    '<th style="padding:7px 10px;font-size:11px;color:#facc15;background:#1e293b;">Type</th>'
-                    '<th style="padding:7px 10px;font-size:11px;color:#facc15;background:#1e293b;">Source</th>'
-                    '<th style="padding:7px 10px;font-size:11px;color:#facc15;background:#1e293b;">Name</th>'
-                    '<th style="padding:7px 10px;font-size:11px;color:#facc15;background:#1e293b;">Value</th>'
-                    '<th style="padding:7px 10px;font-size:11px;color:#facc15;background:#1e293b;">Confidence</th>'
+                    '<th>Type</th>'
+                    '<th>Source</th>'
+                    '<th>Name</th>'
+                    '<th>Value</th>'
+                    '<th>Confidence</th>'
                     '</tr></thead>'
                     '<tbody>' + ev_tbody + '</tbody></table>')
     else:
-        ev_table = '<p style="color:#475569;font-size:12px;padding:6px 0;">No evidence collected</p>'
+        ev_table = '<p class="no-evidence">No evidence collected</p>'
 
     # ── Identifiers ───────────────────────────────────────────────────────────
     id_nodes = findall_local(dep, 'identifiers', 'identifier')
@@ -167,20 +166,17 @@ for dep in deps:
         if not id_name or id_name == 'N/A':
             continue
         if id_url and id_url != 'N/A':
-            id_parts.append('<a class="cve-tag" href="' + id_url + '" target="_blank" '
-                            'style="background:#052e16;color:#86efac;border-color:#166534;">'
-                            + id_name + '</a>')
+            id_parts.append('<a class="cve-tag verified" href="' + id_url + '" target="_blank">' + id_name + '</a>')
         else:
-            id_parts.append('<span class="cve-tag" style="background:#1e293b;color:#94a3b8;'
-                            'border-color:#334155;">' + id_name + '</span>')
+            id_parts.append('<span class="cve-tag unverified">' + id_name + '</span>')
     id_html = ('<div class="cve-list">' + ''.join(id_parts) + '</div>'
-               if id_parts else '<span style="color:#475569;">None</span>')
+               if id_parts else '<span class="empty-val">None</span>')
 
     # ── Hash display ──────────────────────────────────────────────────────────
     def hash_span(val):
         if val and val != 'N/A':
             return '<span class="hash-val">' + val + '</span>'
-        return '<span style="color:#475569;">—</span>'
+        return '<span class="empty-val">—</span>'
 
     md5_disp    = hash_span(md5)
     sha1_disp   = hash_span(sha1)
@@ -216,15 +212,14 @@ for dep in deps:
                 highest_sev = severity
 
             inner_rows.append('<tr>'
-                              '<td><code style="font-size:12px;color:#7dd3fc;">' + name + '</code></td>'
+                              '<td><code>' + name + '</code></td>'
                               '<td>' + badge(severity) + '</td>'
-                              '<td style="color:#94a3b8;">' + score + '</td>'
-                              '<td style="font-size:12px;color:#cbd5e1;">' + desc + '</td>'
+                              '<td>' + score + '</td>'
+                              '<td class="vuln-desc">' + desc + '</td>'
                               '</tr>')
 
         md5_short = (md5[:12] + '…') if md5 and md5 != 'N/A' else '–'
-        inner_table = ('<table style="margin:8px 0;width:100%;background:#060f1e;'
-                       'border:1px solid #1e293b;border-radius:4px;">'
+        inner_table = ('<table class="inner-vuln-table">'
                        '<thead><tr><th>CVE / ID</th><th>Severity</th>'
                        '<th>CVSS</th><th>Description</th></tr></thead>'
                        '<tbody>' + ''.join(inner_rows) + '</tbody></table>')
@@ -234,10 +229,10 @@ for dep in deps:
             '<td>' + badge(highest_sev) + '</td>'
             '<td><div class="cve-list">' + ''.join(cve_parts) + '</div></td>'
             '<td class="hash-val">' + md5_short + '</td>'
-            '<td style="font-size:12px;color:#94a3b8;">' + license_ + '</td></tr>'
+            '<td class="license-val">' + license_ + '</td></tr>'
             '<tr><td colspan="5" style="padding:0;">'
-            '<details style="padding:8px 16px;background:#060f1e;">'
-            '<summary style="cursor:pointer;font-size:12px;color:#38bdf8;padding:6px 0;">'
+            '<details>'
+            '<summary>'
             '&#9654; ' + str(len(vulns)) + ' vulnerability detail(s)</summary>'
             + inner_table +
             '</details></td></tr>')
@@ -251,7 +246,7 @@ for dep in deps:
             '<div class="dep-card-header">'
             '<div><span class="dep-name">&#128230; ' + file_name + '</span>'
             '<span style="margin-left:10px;">' + status_badge + '</span></div>'
-            '<span style="font-size:11px;color:#64748b;">' + ev_count + ' evidence entries</span>'
+            '<span class="ev-count">' + ev_count + ' evidence entries</span>'
             '</div>'
             '<div class="dep-card-body">'
             '<div class="info-grid">'
@@ -273,8 +268,8 @@ for dep in deps:
             '<div class="hash-box"><span class="hash-label">SHA-1</span>' + sha1_disp + '</div>'
             '<div class="hash-box"><span class="hash-label">SHA-256</span>' + sha256_disp + '</div>'
             '</div>'
-            '<details style="margin-top:12px;">'
-            '<summary style="cursor:pointer;font-size:12px;color:#38bdf8;padding:4px 0;">'
+            '<details>'
+            '<summary>'
             '&#9654; Evidence Collected (' + ev_count + ' entries)</summary>'
             + ev_table +
             '</details>'
