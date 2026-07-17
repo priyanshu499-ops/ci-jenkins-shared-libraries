@@ -58,9 +58,18 @@ def trivy(Map step_params) {
             if (imageExists) {
                 logger.logger('msg':'Image found, proceeding with Trivy scan', 'level':'INFO')
 
+                // ── Copy render scripts into workspace ──────────────────────
+                // These scripts convert the raw JSON output into a beautiful HTML report
+                sh "mkdir -p ${WORKSPACE}/trivy"
+                sh "cp -R ${JENKINS_HOME}/workspace/${JOB_NAME}@libs/ci-jenkins-shared-libraries/resources/trivy/render/* ${WORKSPACE}/trivy/ || cp -R resources/trivy/render/* ${WORKSPACE}/trivy/"
+                sh "chmod +x ${WORKSPACE}/trivy/inject.sh"
+
+
                 // --scanners vuln   → disable secret scanning (saves ~30s and avoids
                 //                     the "scanning is slow" warning in Trivy logs)
                 // --skip-java-db-update → use cached Java DB when it is still fresh
+                // 1. Run Trivy and output JSON
+                // 2. Run Python script to convert JSON to beautiful HTML
                 sh """
                     docker run --rm \\
                         -v /var/run/docker.sock:/var/run/docker.sock \\
@@ -73,10 +82,12 @@ def trivy(Map step_params) {
                             --scanners vuln \\
                             --severity "${step_params.scan_severity}" \\
                             ${skipJavaDbFlag} \\
-                            --format template \\
-                            --template "@/contrib/html.tpl" \\
-                            --output /output/trivy_report.html \\
+                            --format json \\
+                            --output /output/trivy_report.json \\
                             ${step_params.image_name}:${step_params.image_tag}
+                            
+                    cd ${WORKSPACE}/trivy
+                    ./inject.sh
                 """
                 logger.logger('msg':'Trivy scan completed successfully', 'level':'INFO')
             } else {
