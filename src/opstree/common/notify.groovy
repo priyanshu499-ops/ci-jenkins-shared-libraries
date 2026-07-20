@@ -104,50 +104,204 @@ def notification(Map step_params) {
 
     if (channels.contains('gmail')) {
         def gmail_notification_recipients_email_ids = "${step_params.gmail_notification_recipients_email_ids}"
-        def gmail_notification_from_email_id = "${step_params.gmail_notification_from_email_id}"
+        def gmail_notification_from_email_id        = "${step_params.gmail_notification_from_email_id}"
 
-        def message = ''
-        def color = ''
-        def remarks = "Started by user ${env.BUILD_USER_ID}." // Customize as needed
+        // ── Fix "Triggered By: null" ──────────────────────────────────
+        def triggeredByEmail = 'Unknown'
+        try {
+            def buildCauses = currentBuild.getBuildCauses()
+            for (cause in buildCauses) {
+                if (cause.userId) {
+                    triggeredByEmail = cause.userId
+                    break
+                } else if (cause._class?.contains('SCMTrigger')) {
+                    triggeredByEmail = 'SCM Auto-Trigger'
+                    break
+                } else if (cause._class?.contains('TimerTrigger')) {
+                    triggeredByEmail = 'Timer / Cron'
+                    break
+                } else if (cause.shortDescription) {
+                    triggeredByEmail = cause.shortDescription
+                    break
+                }
+            }
+        } catch (e) { triggeredByEmail = 'Unknown' }
 
-        if (build_status == 'SUCCESS') {
-            message = "${env.JOB_NAME}: BUILD SUCCESS."
-            color = '#008000'
-        } else if (build_status == 'FAILURE') {
-            message = "${env.JOB_NAME}: BUILD FAILED!!!"
-            color = '#FF0000'
+        def jobStartTime = new Date(currentBuild.startTimeInMillis)
+            .format('dd MMM yyyy, hh:mm:ss a', TimeZone.getTimeZone('Asia/Kolkata'))
+        def duration = currentBuild.durationString?.replace(' and counting', '') ?: 'N/A'
+
+        // ── Status colours ────────────────────────────────────────────
+        def statusColor  = '#22c55e'
+        def statusBg     = '#f0fdf4'
+        def statusBorder = '#bbf7d0'
+        def statusEmoji  = '✅'
+        def statusLabel  = 'BUILD SUCCESS'
+        def headerGrad   = 'linear-gradient(135deg,#166534 0%,#15803d 100%)'
+
+        if (build_status == 'FAILURE' || build_status == 'Failure') {
+            statusColor = '#ef4444'; statusBg = '#fef2f2'; statusBorder = '#fecaca'
+            statusEmoji = '❌'; statusLabel = 'BUILD FAILED'
+            headerGrad  = 'linear-gradient(135deg,#7f1d1d 0%,#b91c1c 100%)'
         } else if (build_status == 'UNSTABLE') {
-            message = "${env.JOB_NAME}: BUILD UNSTABLE!!"
-            color = '#FFFF00'
-        } else {
-            message = "${env.JOB_NAME}: BUILD RESULT UNKNOWN!!"
-            color = '#FFA500'
+            statusColor = '#f59e0b'; statusBg = '#fffbeb'; statusBorder = '#fde68a'
+            statusEmoji = '⚠️'; statusLabel = 'BUILD UNSTABLE'
+            headerGrad  = 'linear-gradient(135deg,#78350f 0%,#d97706 100%)'
+        } else if (build_status == 'ABORTED') {
+            statusColor = '#6b7280'; statusBg = '#f9fafb'; statusBorder = '#e5e7eb'
+            statusEmoji = '🛑'; statusLabel = 'BUILD ABORTED'
+            headerGrad  = 'linear-gradient(135deg,#1f2937 0%,#4b5563 100%)'
         }
 
-        def attachPattern = ''
-        if (fileExists('gitleaks-report.json')) {
-            attachPattern = 'gitleaks-report.json'
+        // ── Collect report attachments ────────────────────────────────
+        def attachParts  = []
+        def reportLabels = []
+        def reportPaths  = [
+            'gitleaks/gitleaks_report.html',
+            'trivy/trivy_report.html',
+            'owasp-reports/owasp_report.html'
+        ]
+        for (rp in reportPaths) {
+            if (fileExists(rp)) {
+                attachParts  << rp
+                reportLabels << rp.tokenize('/')[-1]
+            }
         }
+        def attachPattern  = attachParts.join(',')
+        def reportChips    = reportLabels ? reportLabels.collect {
+            "<span style='display:inline-block;padding:5px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;color:#475569;margin:3px'>&#128196;&nbsp;${it}</span>"
+        }.join('') : "<span style='color:#94a3b8;font-size:13px'>No reports for this build.</span>"
+
+        // ── Rich HTML Body ────────────────────────────────────────────
+        def htmlBody = """<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'/>
+<meta name='viewport' content='width=device-width,initial-scale=1'/>
+<title>Jenkins Build Notification</title>
+</head>
+<body style='margin:0;padding:32px 16px;background:#f1f5f9;font-family:Arial,sans-serif;color:#334155'>
+<div style='max-width:620px;margin:0 auto'>
+
+  <!-- Main Card -->
+  <div style='background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07);margin-bottom:20px'>
+
+    <!-- Header -->
+    <div style='background:${headerGrad};padding:36px 32px;text-align:center;color:#fff'>
+      <div style='font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:10px'>&#128296; Jenkins CI/CD Pipeline</div>
+      <h1 style='font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px'>${env.JOB_NAME}</h1>
+      <div style='font-size:14px;opacity:.8'>Build #${env.BUILD_NUMBER} &nbsp;&middot;&nbsp; ${jobStartTime} IST</div>
+    </div>
+
+    <!-- Status Badge -->
+    <div style='padding:28px 32px 8px;text-align:center'>
+      <span style='display:inline-flex;align-items:center;gap:10px;padding:12px 28px;border-radius:999px;font-size:15px;font-weight:700;border:2px solid ${statusBorder};background:${statusBg};color:${statusColor}'>
+        <span style='width:10px;height:10px;border-radius:50%;background:${statusColor};display:inline-block'></span>
+        ${statusEmoji}&nbsp; ${statusLabel}
+      </span>
+    </div>
+
+    <!-- Info Grid -->
+    <div style='padding:20px 32px;display:grid;grid-template-columns:1fr 1fr;gap:14px'>
+
+      <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse'>
+      <tr>
+        <td style='padding:8px'>
+          <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px'>
+            <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:5px'>Job Name</div>
+            <div style='font-size:13px;font-weight:700;color:#0f172a'>${env.JOB_NAME}</div>
+          </div>
+        </td>
+        <td style='padding:8px'>
+          <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px'>
+            <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:5px'>Build Number</div>
+            <div style='font-size:13px;font-weight:700;color:#0f172a'>#${env.BUILD_NUMBER}</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style='padding:8px'>
+          <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px'>
+            <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:5px'>Triggered By</div>
+            <div style='font-size:13px;font-weight:700;color:#0f172a'>${triggeredByEmail}</div>
+          </div>
+        </td>
+        <td style='padding:8px'>
+          <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px'>
+            <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:5px'>Duration</div>
+            <div style='font-size:13px;font-weight:700;color:#0f172a'>${duration}</div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td style='padding:8px'>
+          <div style='background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:14px'>
+            <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:5px'>Start Time</div>
+            <div style='font-size:13px;font-weight:700;color:#0f172a'>${jobStartTime} IST</div>
+          </div>
+        </td>
+        <td style='padding:8px'>
+          <div style='background:${statusBg};border:1px solid ${statusBorder};border-radius:12px;padding:14px'>
+            <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:5px'>Status</div>
+            <div style='font-size:13px;font-weight:700;color:${statusColor}'>${statusLabel}</div>
+          </div>
+        </td>
+      </tr>
+      </table>
+
+    </div>
+
+    <!-- Build URL Button -->
+    <div style='padding:4px 32px 24px'>
+      <a href='${env.BUILD_URL}' style='display:block;text-align:center;background:${headerGrad};color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 24px;border-radius:12px'>&#128279; View Full Build Logs</a>
+    </div>
+
+    <!-- Divider -->
+    <div style='height:1px;background:#f1f5f9;margin:0 32px'></div>
+
+    <!-- Reports Section -->
+    <div style='padding:20px 32px 24px'>
+      <div style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#64748b;margin-bottom:10px'>&#128206; Attached Security Reports</div>
+      <div>${reportChips}</div>
+    </div>
+
+    <!-- Divider -->
+    <div style='height:1px;background:#f1f5f9;margin:0 32px'></div>
+
+    <!-- Footer -->
+    <div style='text-align:center;padding:18px 32px;font-size:12px;color:#94a3b8'>
+      This notification was sent automatically by <strong style='color:#475569'>Jenkins CI/CD</strong>.<br/>Do not reply to this email.
+    </div>
+
+  </div>
+</div>
+</body>
+</html>"""
 
         emailext(
-                to: gmail_notification_recipients_email_ids,
-                subject: "JenkinsJob Name: ${env.JOB_NAME} Build Number: ${env.BUILD_NUMBER} is ${build_status}",
-                from: gmail_notification_from_email_id,
-                body: """
-                        <strong>Build No: #${env.BUILD_NUMBER}</strong><br><br>
-                        <strong>Remarks</strong>: ${remarks}<br><br>
-                        Find Detailed Status of Pipeline: ${build_status}<br><br>
-                        Triggered By: ${env.BUILD_USER_ID}<br><br>
-                        Job Name: ${env.JOB_NAME}<br><br>
-                        Build Number: ${env.BUILD_NUMBER}<br><br>
-                        Build URL: ${env.BUILD_URL}""",
-                mimeType: 'text/html',
-                attachmentsPattern: attachPattern
-            )
+            to:                 gmail_notification_recipients_email_ids,
+            from:               gmail_notification_from_email_id,
+            subject:            "${statusEmoji} [Jenkins] ${env.JOB_NAME} #${env.BUILD_NUMBER} \u2014 ${statusLabel}",
+            body:               htmlBody,
+            mimeType:           'text/html',
+            attachmentsPattern: attachPattern
+        )
     }
 
+
     if (channels.contains('google_chat')) {
-        def triggeredBy = env.BUILD_USER_ID ?: 'SCM Trigger/Unknown'
+        // ── Fix "Triggered By: null" ──────────────────────────────────
+        def triggeredBy = 'Unknown'
+        try {
+            def buildCauses = currentBuild.getBuildCauses()
+            for (cause in buildCauses) {
+                if (cause.userId) { triggeredBy = cause.userId; break }
+                else if (cause._class?.contains('SCMTrigger')) { triggeredBy = 'SCM Auto-Trigger'; break }
+                else if (cause._class?.contains('TimerTrigger')) { triggeredBy = 'Timer / Cron'; break }
+                else if (cause.shortDescription) { triggeredBy = cause.shortDescription; break }
+            }
+        } catch (e) { triggeredBy = 'Unknown' }
+
         def jobStartTime = new Date(currentBuild.startTimeInMillis).format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Kolkata'))
         def webhook_url_creds_id = "${step_params.webhook_url_creds_id}"
 
