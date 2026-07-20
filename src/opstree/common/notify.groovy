@@ -169,28 +169,58 @@ def notification(Map step_params) {
         }
         reportButtons = reportLinks ? reportLinks.join('') : "<p style='color:#94a3b8;font-size:13px'>No security reports were generated for this build.</p>"
 
-        // ── Build self-contained HTML attachments (CSS inlined) ──────────
-        // Reason: plain HTML attachments reference external report.css
-        // which is missing in email. Inlining CSS makes them fully portable.
+        // ── Generate PDF attachments via wkhtmltopdf ─────────────────────
+        // Step 1: Create self-contained HTML (CSS inlined)
+        // Step 2: Convert to PDF using Docker wkhtmltopdf
+        // PDFs are fully portable — no Jenkins access needed
         def attachPaths = []
         def attachDir   = 'email-reports'
         sh "mkdir -p ${attachDir}"
 
         def reportAttachMap = [
-            'gitleaks/gitleaks_report.html'  : [ css: 'gitleaks/report.css',      out: "${attachDir}/Gitleaks_Security_Report.html" ],
-            'trivy/trivy_report.html'        : [ css: 'trivy/report.css',          out: "${attachDir}/Trivy_Scan_Report.html" ],
-            'owasp-reports/owasp_report.html': [ css: 'owasp-reports/report.css', out: "${attachDir}/OWASP_Dependency_Report.html" ]
+            'gitleaks/gitleaks_report.html'  : [ css: 'gitleaks/report.css',      name: 'Gitleaks_Security_Report' ],
+            'trivy/trivy_report.html'        : [ css: 'trivy/report.css',          name: 'Trivy_Scan_Report' ],
+            'owasp-reports/owasp_report.html': [ css: 'owasp-reports/report.css', name: 'OWASP_Dependency_Report' ]
         ]
+
         reportAttachMap.each { htmlPath, info ->
             if (fileExists(htmlPath)) {
+                def standaloneHtml = "${attachDir}/${info.name}.html"
+                def pdfOut         = "${attachDir}/${info.name}.pdf"
+
+                // Step 1 — Inline CSS so wkhtmltopdf renders correctly
                 def html = readFile(htmlPath)
                 def css  = fileExists(info.css) ? readFile(info.css) : ''
                 if (css) {
-                    // Replace <link rel="stylesheet" href="report.css"> with inline <style>
                     html = html.replaceAll(/<link[^>]+stylesheet[^>]*>/, "<style>\n${css}\n</style>")
                 }
-                writeFile(file: info.out, text: html, encoding: 'UTF-8')
-                attachPaths << info.out
+                writeFile(file: standaloneHtml, text: html, encoding: 'UTF-8')
+
+                // Step 2 — Convert HTML → PDF using Docker wkhtmltopdf
+                try {
+                    sh """
+                        docker run --rm \\
+                            -v \${WORKSPACE}/${attachDir}:/data \\
+                            surnet/alpine-wkhtmltopdf:3.18.0-0.12.6-full \\
+                            --enable-local-file-access \\
+                            --page-size A4 \\
+                            --margin-top 10mm --margin-bottom 10mm \\
+                            --margin-left 10mm --margin-right 10mm \\
+                            --print-media-type \\
+                            /data/${info.name}.html \\
+                            /data/${info.name}.pdf
+                    """
+                    if (fileExists(pdfOut)) {
+                        attachPaths << pdfOut
+                        echo "[INFO] PDF generated: ${pdfOut}"
+                    } else {
+                        echo "[WARN] PDF not found after conversion, falling back to HTML: ${standaloneHtml}"
+                        attachPaths << standaloneHtml
+                    }
+                } catch (convErr) {
+                    echo "[WARN] PDF conversion failed for ${info.name}: ${convErr.getMessage()}. Attaching HTML instead."
+                    attachPaths << standaloneHtml
+                }
             }
         }
         def attachPattern = attachPaths.join(',')
