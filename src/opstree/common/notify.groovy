@@ -153,24 +153,48 @@ def notification(Map step_params) {
             headerGrad  = 'linear-gradient(135deg,#1f2937 0%,#4b5563 100%)'
         }
 
-        // ── Collect report attachments ────────────────────────────────
-        def attachParts  = []
-        def reportLabels = []
-        def reportPaths  = [
-            'gitleaks/gitleaks_report.html',
-            'trivy/trivy_report.html',
-            'owasp-reports/owasp_report.html'
+        // ── Jenkins published report URLs (for email body links) ─────────
+        def reportLinks = []
+        def reportButtons = ''
+
+        def reportMap = [
+            'gitleaks/gitleaks_report.html'  : [ label: '🔒 Gitleaks Security Report',     url: "${env.BUILD_URL}Gitleaks_20Security_20Report/" ],
+            'trivy/trivy_report.html'        : [ label: '🐳 Trivy Image Scan Report',       url: "${env.BUILD_URL}Trivy_20Image_20Scanning_20Report/" ],
+            'owasp-reports/owasp_report.html': [ label: '🛡️ OWASP Dependency Check Report', url: "${env.BUILD_URL}OWASP_20Dependency_20Check_20Report/" ]
         ]
-        for (rp in reportPaths) {
-            if (fileExists(rp)) {
-                attachParts  << rp
-                reportLabels << rp.tokenize('/')[-1]
+        reportMap.each { path, info ->
+            if (fileExists(path)) {
+                reportLinks << """<a href='${info.url}' style='display:block;text-align:center;background:#f8fafc;border:1px solid #e2e8f0;color:#334155;text-decoration:none;font-weight:600;font-size:13px;padding:12px 20px;border-radius:10px;margin-bottom:8px'>${info.label} &#x2197;</a>"""
             }
         }
-        def attachPattern  = attachParts.join(',')
-        def reportChips    = reportLabels ? reportLabels.collect {
-            "<span style='display:inline-block;padding:5px 12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;font-weight:600;color:#475569;margin:3px'>&#128196;&nbsp;${it}</span>"
-        }.join('') : "<span style='color:#94a3b8;font-size:13px'>No reports for this build.</span>"
+        reportButtons = reportLinks ? reportLinks.join('') : "<p style='color:#94a3b8;font-size:13px'>No security reports were generated for this build.</p>"
+
+        // ── Build self-contained HTML attachments (CSS inlined) ──────────
+        // Reason: plain HTML attachments reference external report.css
+        // which is missing in email. Inlining CSS makes them fully portable.
+        def attachPaths = []
+        def attachDir   = 'email-reports'
+        sh "mkdir -p ${attachDir}"
+
+        def reportAttachMap = [
+            'gitleaks/gitleaks_report.html'  : [ css: 'gitleaks/report.css',      out: "${attachDir}/Gitleaks_Security_Report.html" ],
+            'trivy/trivy_report.html'        : [ css: 'trivy/report.css',          out: "${attachDir}/Trivy_Scan_Report.html" ],
+            'owasp-reports/owasp_report.html': [ css: 'owasp-reports/report.css', out: "${attachDir}/OWASP_Dependency_Report.html" ]
+        ]
+        reportAttachMap.each { htmlPath, info ->
+            if (fileExists(htmlPath)) {
+                def html = readFile(htmlPath)
+                def css  = fileExists(info.css) ? readFile(info.css) : ''
+                if (css) {
+                    // Replace <link rel="stylesheet" href="report.css"> with inline <style>
+                    html = html.replaceAll(/<link[^>]+stylesheet[^>]*>/, "<style>\n${css}\n</style>")
+                }
+                writeFile(file: info.out, text: html, encoding: 'UTF-8')
+                attachPaths << info.out
+            }
+        }
+        def attachPattern = attachPaths.join(',')
+
 
         // ── Rich HTML Body ────────────────────────────────────────────
         def htmlBody = """<!DOCTYPE html>
@@ -202,8 +226,7 @@ def notification(Map step_params) {
     </div>
 
     <!-- Info Grid -->
-    <div style='padding:20px 32px;display:grid;grid-template-columns:1fr 1fr;gap:14px'>
-
+    <div style='padding:20px 32px'>
       <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse'>
       <tr>
         <td style='padding:8px'>
@@ -248,21 +271,20 @@ def notification(Map step_params) {
         </td>
       </tr>
       </table>
-
     </div>
 
-    <!-- Build URL Button -->
-    <div style='padding:4px 32px 24px'>
+    <!-- View Build Logs Button -->
+    <div style='padding:4px 32px 16px'>
       <a href='${env.BUILD_URL}' style='display:block;text-align:center;background:${headerGrad};color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 24px;border-radius:12px'>&#128279; View Full Build Logs</a>
     </div>
 
     <!-- Divider -->
     <div style='height:1px;background:#f1f5f9;margin:0 32px'></div>
 
-    <!-- Reports Section -->
+    <!-- Security Report Links -->
     <div style='padding:20px 32px 24px'>
-      <div style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#64748b;margin-bottom:10px'>&#128206; Attached Security Reports</div>
-      <div>${reportChips}</div>
+      <div style='font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#64748b;margin-bottom:12px'>&#128206; Security Reports (Click to View)</div>
+      ${reportButtons}
     </div>
 
     <!-- Divider -->
@@ -327,6 +349,23 @@ def notification(Map step_params) {
             headerColor = '#FFFF00'
         }
 
+        // ── Jenkins report URLs for Google Chat buttons ───────────────
+        def gchatButtons = [
+            [ text: '🔗 View Build Logs', url: "${env.BUILD_URL}" ]
+        ]
+        def reportCheckMap = [
+            'gitleaks/gitleaks_report.html'  : [ text: '🔒 Gitleaks Report',  url: "${env.BUILD_URL}Gitleaks_20Security_20Report/" ],
+            'trivy/trivy_report.html'        : [ text: '🐳 Trivy Scan',        url: "${env.BUILD_URL}Trivy_20Image_20Scanning_20Report/" ],
+            'owasp-reports/owasp_report.html': [ text: '🛡️ OWASP Report',      url: "${env.BUILD_URL}OWASP_20Dependency_20Check_20Report/" ]
+        ]
+        reportCheckMap.each { path, info ->
+            if (fileExists(path)) { gchatButtons << info }
+        }
+
+        def buttonWidgets = gchatButtons.collect { btn ->
+            "{ \"textButton\": { \"text\": \"${btn.text}\", \"onClick\": { \"openLink\": { \"url\": \"${btn.url}\" } } } }"
+        }.join(', ')
+
         def payload = """{
             "cards": [{
                 "header": {
@@ -335,16 +374,23 @@ def notification(Map step_params) {
                     "imageUrl": "https://www.jenkins.io/images/logos/jenkins/jenkins.png",
                     "imageStyle": "AVATAR"
                 },
-                "sections": [{
-                    "widgets": [
-                        { "keyValue": { "topLabel": "Status",       "content": "${statusText}" } },
-                        { "keyValue": { "topLabel": "Job Name",     "content": "${env.JOB_NAME}" } },
-                        { "keyValue": { "topLabel": "Build Number", "content": "#${env.BUILD_NUMBER}" } },
-                        { "keyValue": { "topLabel": "Triggered By", "content": "${triggeredBy}" } },
-                        { "keyValue": { "topLabel": "Start Time",   "content": "${jobStartTime} IST" } },
-                        { "buttons": [{ "textButton": { "text": "🔗 View Build Logs", "onClick": { "openLink": { "url": "${env.BUILD_URL}" } } } }] }
-                    ]
-                }]
+                "sections": [
+                    {
+                        "widgets": [
+                            { "keyValue": { "topLabel": "Status",       "content": "${statusText}" } },
+                            { "keyValue": { "topLabel": "Job Name",     "content": "${env.JOB_NAME}" } },
+                            { "keyValue": { "topLabel": "Build Number", "content": "#${env.BUILD_NUMBER}" } },
+                            { "keyValue": { "topLabel": "Triggered By", "content": "${triggeredBy}" } },
+                            { "keyValue": { "topLabel": "Start Time",   "content": "${jobStartTime} IST" } }
+                        ]
+                    },
+                    {
+                        "header": "Security Reports",
+                        "widgets": [
+                            { "buttons": [ ${buttonWidgets} ] }
+                        ]
+                    }
+                ]
             }]
         }"""
 
