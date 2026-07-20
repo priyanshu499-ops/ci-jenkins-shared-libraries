@@ -30,15 +30,15 @@ body {
 
 /* ─── Summary Bar ─────────────────────────────────────────── */
 .summary {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 20px;
+  text-align: center;
   padding: 0 40px;
   margin-bottom: 40px;
 }
 
 .summary-item {
+  display: inline-block;
+  margin: 10px;
+  vertical-align: top;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
