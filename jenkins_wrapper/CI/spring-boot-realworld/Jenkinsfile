@@ -86,6 +86,10 @@ node {
     // enable_jira                      : false,
     // jira_ticket_id_build_param       : 'JIRA_TICKET_ID',
     // NOTIFICATION
-    notification_enabled             : false
+    notification_enabled                      : true,
+    notification_channel                      : 'google_chat,gmail',
+    webhook_url_creds_id                      : 'GCHAT_JENKINS_WEBHOOK',
+    gmail_notification_from_email_id          : 'neelesh.r@montra.app',
+    gmail_notification_recipients_email_ids   : 'neelesh.r@montra.app'
   ])
 }
