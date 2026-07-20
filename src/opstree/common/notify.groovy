@@ -158,9 +158,9 @@ def notification(Map step_params) {
         def reportButtons = ''
 
         def reportMap = [
-            'gitleaks/gitleaks_report.html'  : [ label: '🔒 Gitleaks Security Report',     url: "${env.BUILD_URL}Gitleaks_20Security_20Report/" ],
-            'trivy/trivy_report.html'        : [ label: '🐳 Trivy Image Scan Report',       url: "${env.BUILD_URL}Trivy_20Image_20Scanning_20Report/" ],
-            'owasp-reports/owasp_report.html': [ label: '🛡️ OWASP Dependency Check Report', url: "${env.BUILD_URL}OWASP_20Dependency_20Check_20Report/" ]
+            'gitleaks/gitleaks_report.html'  : [ label: 'Gitleaks Security Report',     url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Gitleaks_20Security_20Report/" ],
+            'trivy/trivy_report.html'        : [ label: 'Trivy Image Scan Report',       url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Trivy_20Image_20Scanning_20Report/" ],
+            'owasp-reports/owasp_report.html': [ label: 'OWASP Dependency Check Report', url: "${env.JENKINS_URL}job/${env.JOB_NAME}/OWASP_20Dependency_20Check_20Report/" ]
         ]
         reportMap.each { path, info ->
             if (fileExists(path)) {
@@ -204,6 +204,8 @@ def notification(Map step_params) {
                             surnet/alpine-wkhtmltopdf:3.18.0-0.12.6-full \\
                             --enable-local-file-access \\
                             --page-size A4 \\
+                            --orientation Landscape \\
+                            --zoom 0.75 \\
                             --margin-top 10mm --margin-bottom 10mm \\
                             --margin-left 10mm --margin-right 10mm \\
                             --print-media-type \\
@@ -242,7 +244,7 @@ def notification(Map step_params) {
 
     <!-- Header -->
     <div style='background:${headerGrad};padding:36px 32px;text-align:center;color:#fff'>
-      <div style='font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:10px'>&#128296; Jenkins CI/CD Pipeline</div>
+      <div style='font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:10px'>&#128296; Montra CI/CD Pipeline</div>
       <h1 style='font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px'>${env.JOB_NAME}</h1>
       <div style='font-size:14px;opacity:.8'>Build #${env.BUILD_NUMBER} &nbsp;&middot;&nbsp; ${jobStartTime} IST</div>
     </div>
@@ -322,7 +324,7 @@ def notification(Map step_params) {
 
     <!-- Footer -->
     <div style='text-align:center;padding:18px 32px;font-size:12px;color:#94a3b8'>
-      This notification was sent automatically by <strong style='color:#475569'>Jenkins CI/CD</strong>.<br/>Do not reply to this email.
+      This notification was sent automatically by <strong style='color:#475569'>Montra CI/CD Pipeline</strong>.<br/>Do not reply to this email.
     </div>
 
   </div>
@@ -384,9 +386,9 @@ def notification(Map step_params) {
             [ text: '🔗 View Build Logs', url: "${env.BUILD_URL}" ]
         ]
         def reportCheckMap = [
-            'gitleaks/gitleaks_report.html'  : [ text: '🔒 Gitleaks Report',  url: "${env.BUILD_URL}Gitleaks_20Security_20Report/" ],
-            'trivy/trivy_report.html'        : [ text: '🐳 Trivy Scan',        url: "${env.BUILD_URL}Trivy_20Image_20Scanning_20Report/" ],
-            'owasp-reports/owasp_report.html': [ text: '🛡️ OWASP Report',      url: "${env.BUILD_URL}OWASP_20Dependency_20Check_20Report/" ]
+            'gitleaks/gitleaks_report.html'  : [ text: 'Gitleaks Report',  url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Gitleaks_20Security_20Report/" ],
+            'trivy/trivy_report.html'        : [ text: 'Trivy Scan',       url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Trivy_20Image_20Scanning_20Report/" ],
+            'owasp-reports/owasp_report.html': [ text: 'OWASP Report',     url: "${env.JENKINS_URL}job/${env.JOB_NAME}/OWASP_20Dependency_20Check_20Report/" ]
         ]
         reportCheckMap.each { path, info ->
             if (fileExists(path)) { gchatButtons << info }
@@ -399,7 +401,7 @@ def notification(Map step_params) {
         def payload = """{
             "cards": [{
                 "header": {
-                    "title": "${statusEmoji} Jenkins CI Notification",
+                    "title": "${statusEmoji} Montra CI Notification",
                     "subtitle": "${env.JOB_NAME}",
                     "imageUrl": "https://www.jenkins.io/images/logos/jenkins/jenkins.png",
                     "imageStyle": "AVATAR"
