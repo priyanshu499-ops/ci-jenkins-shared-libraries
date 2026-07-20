@@ -149,7 +149,7 @@ def notification(Map step_params) {
     if (channels.contains('google_chat')) {
         def triggeredBy = env.BUILD_USER_ID ?: 'SCM Trigger/Unknown'
         def jobStartTime = new Date(currentBuild.startTimeInMillis).format('yyyy-MM-dd HH:mm:ss', TimeZone.getTimeZone('Asia/Kolkata'))
-        webhook_url_creds_id = "${step_params.webhook_url_creds_id}"
+        def webhook_url_creds_id = "${step_params.webhook_url_creds_id}"
 
         def statusEmoji = ''
         def statusText  = ''

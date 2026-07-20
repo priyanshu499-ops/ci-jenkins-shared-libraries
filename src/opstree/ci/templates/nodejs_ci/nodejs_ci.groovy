@@ -241,8 +241,9 @@ def call(Map step_params) {
                         build_status: 'Failure',
                         webhook_url_creds_id: "${get_params_value(enableOverride, step_params, 'webhook_url_creds_id')}",
                         notification_channel: "${get_params_value(enableOverride, step_params, 'notification_channel')}",
-                        notification_enabled: "${get_params_value(enableOverride, step_params, 'notification_enabled')}"
-
+                        notification_enabled: "${get_params_value(enableOverride, step_params, 'notification_enabled')}",
+                        gmail_notification_recipients_email_ids: "${get_params_value(enableOverride, step_params, 'gmail_notification_recipients_email_ids')}",
+                        gmail_notification_from_email_id: "${get_params_value(enableOverride, step_params, 'gmail_notification_from_email_id')}"
                     )
             }
             throw e
@@ -270,8 +271,9 @@ def call(Map step_params) {
                                                 build_status: 'Success',
                                                 webhook_url_creds_id: "${get_params_value(enableOverride, step_params, 'webhook_url_creds_id')}",
                                                 notification_channel: "${get_params_value(enableOverride, step_params, 'notification_channel')}",
-                                                notification_enabled: "${get_params_value(enableOverride, step_params, 'notification_enabled')}"
-
+                                                notification_enabled: "${get_params_value(enableOverride, step_params, 'notification_enabled')}",
+                                                gmail_notification_recipients_email_ids: "${get_params_value(enableOverride, step_params, 'gmail_notification_recipients_email_ids')}",
+                                                gmail_notification_from_email_id: "${get_params_value(enableOverride, step_params, 'gmail_notification_from_email_id')}"
                                                 )
                         }
                 }
