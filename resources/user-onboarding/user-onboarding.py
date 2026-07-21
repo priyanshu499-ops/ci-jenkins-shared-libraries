@@ -51,15 +51,18 @@ def get_crumb():
 # ==========================
 
 def user_exists(username):
-    url = f"{JENKINS_URL}/user/{username}/api/json"
+    url = f"{JENKINS_URL}/asynchPeople/api/json"
     try:
         res = requests.get(url, auth=(ADMIN_USER, ADMIN_TOKEN))
         if res.status_code == 200:
-            data = res.json()
-            if data.get("id") == username or data.get("fullName") == username:
-                return True
+            users_list = res.json().get("users", [])
+            for u in users_list:
+                user_obj = u.get("user", {})
+                user_id = user_obj.get("id") or user_obj.get("fullName")
+                if user_id and user_id.lower() == username.lower():
+                    return True
     except Exception as e:
-        logging.warning(f"Error checking user {username}: {e}")
+        logging.warning(f"Error checking asynchPeople for {username}: {e}")
 
     return False
 

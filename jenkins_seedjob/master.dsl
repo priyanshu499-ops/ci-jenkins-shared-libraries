@@ -13,8 +13,8 @@ folder('user-onboarding') {
     description('User onboarding and offboarding pipelines — create/delete users, assign/unassign roles')
 }
 
-pipelineJob('user-onboarding/users') {
-    displayName('users')
+pipelineJob('user-onboarding/user-onboarding') {
+    displayName('user-onboarding')
     description('User onboarding pipeline — create Jenkins users and assign roles | Owner: CI-CD Team')
     logRotator {
         numToKeep(10)
