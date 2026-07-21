@@ -1,4 +1,4 @@
-def userManagementJobs = [
+def userJobs = [
     'user-onboarding': [
         url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
         credentials  : 'github-token',
@@ -7,7 +7,7 @@ def userManagementJobs = [
         owner        : 'CI-CD Team',
         logRotatorNum: 10,
         parameters   : [
-            [type: 'choice', name: 'MODE', choices: 'bulk\nsingle', description: 'Onboarding mode — bulk (CSV) or single user'],
+            [type: 'choice', name: 'MODE', choices: ['bulk', 'single'], description: 'Onboarding mode — bulk (CSV) or single user'],
             [name: 'USERNAME', defaultValue: '', description: 'Username (only for single mode)'],
             [name: 'EMAIL', defaultValue: '', description: 'Email address (only for single mode)'],
             [name: 'ROLES', defaultValue: 'apigateway-read,apigateway-execute,auth-service-read,auth-service-execute,design-ui-framework-read,design-ui-framework-execute,instacard-mock-apis-read,instacard-mock-apis-execute,instacard-user-service-read,instacard-user-service-execute,montra-bom-read,montra-bom-execute,sdk-instacard-frontend-read,sdk-instacard-frontend-execute,virtualcard-service-read,virtualcard-service-execute', description: 'Comma-separated roles to assign (only for single mode)'],
@@ -23,14 +23,14 @@ def userManagementJobs = [
         owner        : 'CI-CD Team',
         logRotatorNum: 10,
         parameters   : [
-            [type: 'choice', name: 'MODE', choices: 'single\nbulk', description: 'Offboarding mode — single user or bulk (CSV)'],
+            [type: 'choice', name: 'MODE', choices: ['single', 'bulk'], description: 'Offboarding mode — single user or bulk (CSV)'],
             [name: 'USERNAME', defaultValue: '', description: 'Username to delete (only for single mode)'],
             [name: 'CSV_PATH', defaultValue: 'resources/user-onboarding/users.csv', description: 'Path to users CSV file (for bulk mode)']
         ]
     ]
 ]
 
-userManagementJobs.each { jobName, config ->
+userJobs.each { jobName, config ->
     pipelineJob("user-management/${jobName}") {
         displayName("${jobName}")
         description("User management pipeline for ${jobName} | Owner: ${config.owner}")
@@ -42,7 +42,7 @@ userManagementJobs.each { jobName, config ->
                 if (param.type == 'boolean') {
                     booleanParam(param.name, param.defaultValue, param.description)
                 } else if (param.type == 'choice') {
-                    choiceParam(param.name, param.choices.split('\n') as List, param.description)
+                    choiceParam(param.name, param.choices, param.description)
                 } else {
                     stringParam(param.name, param.defaultValue, param.description)
                 }
