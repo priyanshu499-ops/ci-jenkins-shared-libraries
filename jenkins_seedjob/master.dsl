@@ -12,3 +12,6 @@ folder('user-management') {
     displayName('User Management')
     description('User onboarding and offboarding pipelines')
 }
+
+// Evaluate user_management.groovy script so pipelines are generated even if not listed in Seed Job targets
+evaluate(readFileFromWorkspace('jenkins_seedjob/USER_MANAGEMENT/user_management.groovy'))
