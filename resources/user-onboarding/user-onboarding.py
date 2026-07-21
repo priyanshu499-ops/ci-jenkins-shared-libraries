@@ -16,6 +16,7 @@ ADMIN_USER  = os.environ.get("ADMIN_USER")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 
 MODE       = os.environ.get("MODE")
+USERNAME   = os.environ.get("USERNAME", "").strip()
 
 CSV_PATH = os.getenv("CSV_PATH", "resources/user-onboarding/users.csv")
 RESULTS_FILE = os.getenv("RESULTS_FILE", "onboarding_results.json")
@@ -52,7 +53,6 @@ def user_exists(username):
 
     if res.status_code == 200:
         data = res.json()
-        # Verify it's a real user (not auto-created placeholder)
         if data.get("id") == username or data.get("fullName") == username:
             return True
 
@@ -88,6 +88,26 @@ def create_user(username, password, email):
         return False
 
 # ==========================
+# DELETE USER
+# ==========================
+
+def delete_user(username):
+    crumb_field, crumb = get_crumb()
+
+    url = f"{JENKINS_URL}/user/{username}/doDelete"
+
+    headers = {crumb_field: crumb} if crumb else {}
+
+    res = requests.post(url, headers=headers, auth=(ADMIN_USER, ADMIN_TOKEN))
+
+    if res.status_code in [200, 302]:
+        logging.info(f"[DELETED] {username}")
+        return True
+    else:
+        logging.error(f"[FAILED DELETE] {username} → {res.text}")
+        return False
+
+# ==========================
 # ROLE ASSIGN
 # ==========================
 
@@ -109,7 +129,7 @@ def assign_role(username, role):
     logging.info(f"[ROLE] {role} → {username}")
 
 # ==========================
-# BULK MODE
+# BULK / SINGLE CREATE MODE
 # ==========================
 
 def bulk_mode():
@@ -182,9 +202,50 @@ def bulk_mode():
         sys.exit(1)
 
 # ==========================
+# DELETE MODE
+# ==========================
+
+def delete_mode():
+    deleted_users = []
+
+    try:
+        if USERNAME:
+            # Delete single user specified via USERNAME env var
+            if not user_exists(USERNAME):
+                logging.info(f"{USERNAME} user does not exist")
+            else:
+                if delete_user(USERNAME):
+                    deleted_users.append(USERNAME)
+        else:
+            # Delete users listed in CSV
+            with open(CSV_PATH) as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    u = row["username"].strip()
+                    if not user_exists(u):
+                        logging.info(f"{u} user does not exist")
+                        continue
+                    if delete_user(u):
+                        deleted_users.append(u)
+
+        with open('deleted_users.txt', 'w') as f:
+            f.write("\n".join(deleted_users))
+
+        logging.info(f"Delete completed — removed users: {deleted_users}")
+
+    except Exception as e:
+        logging.error(f"Delete failed: {e}")
+        sys.exit(1)
+
+# ==========================
 # MAIN
 # ==========================
 
 if __name__ == "__main__":
-    if MODE == "bulk":
+    if MODE in ["delete", "remove"]:
+        delete_mode()
+    elif MODE in ["bulk", "single"]:
         bulk_mode()
+    else:
+        logging.error(f"Unknown MODE: {MODE}")
+        sys.exit(1)

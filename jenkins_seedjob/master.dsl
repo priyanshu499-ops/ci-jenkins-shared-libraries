@@ -20,8 +20,8 @@ pipelineJob('user-onboarding/users') {
         numToKeep(10)
     }
     parameters {
-        choiceParam('MODE', ['bulk', 'single'], 'Onboarding mode — bulk (CSV) or single user')
-        stringParam('USERNAME', '', 'Username (only for single mode)')
+        choiceParam('MODE', ['bulk', 'single', 'delete'], 'Mode — bulk create (CSV), single user create, or delete user')
+        stringParam('USERNAME', '', 'Username (for single create or delete mode)')
         stringParam('EMAIL', '', 'Email address (only for single mode)')
         stringParam('ROLES', 'apigateway-read,apigateway-execute,auth-service-read,auth-service-execute,design-ui-framework-read,design-ui-framework-execute,instacard-mock-apis-read,instacard-mock-apis-execute,instacard-user-service-read,instacard-user-service-execute,montra-bom-read,montra-bom-execute,sdk-instacard-frontend-read,sdk-instacard-frontend-execute,virtualcard-service-read,virtualcard-service-execute', 'Comma-separated roles to assign (only for single mode)')
         stringParam('CSV_PATH', 'resources/user-onboarding/users.csv', 'Path to users CSV file (for bulk mode)')

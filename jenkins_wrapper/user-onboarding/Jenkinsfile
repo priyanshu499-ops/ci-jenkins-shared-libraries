@@ -4,11 +4,11 @@ pipeline {
     agent any
 
     parameters {
-        choice(name: 'MODE', choices: ['bulk', 'single'], description: 'Onboarding mode — bulk (CSV) or single user')
-        string(name: 'USERNAME', defaultValue: '', description: 'Username (only for single mode)')
-        string(name: 'EMAIL', defaultValue: '', description: 'Email address (only for single mode)')
-        string(name: 'ROLES', defaultValue: 'apigateway-read,apigateway-execute,auth-service-read,auth-service-execute,design-ui-framework-read,design-ui-framework-execute,instacard-mock-apis-read,instacard-mock-apis-execute,instacard-user-service-read,instacard-user-service-execute,montra-bom-read,montra-bom-execute,sdk-instacard-frontend-read,sdk-instacard-frontend-execute,virtualcard-service-read,virtualcard-service-execute', description: 'Comma-separated roles to assign (only for single mode)')
-        string(name: 'CSV_PATH', defaultValue: 'resources/user-onboarding/users.csv', description: 'Path to users CSV file (for bulk mode)')
+        choice(name: 'MODE', choices: ['bulk', 'single', 'delete'], description: 'Mode — bulk create (CSV), single user create, or delete user')
+        string(name: 'USERNAME', defaultValue: '', description: 'Username (for single mode create or delete mode)')
+        string(name: 'EMAIL', defaultValue: '', description: 'Email address (only for single create mode)')
+        string(name: 'ROLES', defaultValue: 'apigateway-read,apigateway-execute,auth-service-read,auth-service-execute,design-ui-framework-read,design-ui-framework-execute,instacard-mock-apis-read,instacard-mock-apis-execute,instacard-user-service-read,instacard-user-service-execute,montra-bom-read,montra-bom-execute,sdk-instacard-frontend-read,sdk-instacard-frontend-execute,virtualcard-service-read,virtualcard-service-execute', description: 'Comma-separated roles to assign (only for single create mode)')
+        string(name: 'CSV_PATH', defaultValue: 'resources/user-onboarding/users.csv', description: 'Path to users CSV file (for bulk create/delete)')
         booleanParam(name: 'SEND_EMAIL', defaultValue: true, description: 'Send credentials email to user after creation')
         string(name: 'ADMIN_CRED_ID', defaultValue: 'JENKINS_ADMIN_CREDS', description: 'Jenkins credential ID for admin username/password')
     }
@@ -19,10 +19,10 @@ pipeline {
                 script {
                     if (params.MODE == 'single') {
                         if (!params.USERNAME?.trim() || !params.EMAIL?.trim()) {
-                            error("USERNAME and EMAIL are required in single mode")
+                            error("USERNAME and EMAIL are required in single create mode")
                         }
                         if (!params.ROLES?.trim()) {
-                            error("ROLES cannot be empty in single mode")
+                            error("ROLES cannot be empty in single create mode")
                         }
                     }
                 }
@@ -53,7 +53,7 @@ pipeline {
             }
         }
 
-        stage('Run User Onboarding') {
+        stage('Run User Onboarding/Offboarding') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: params.ADMIN_CRED_ID,
@@ -62,11 +62,13 @@ pipeline {
                 )]) {
                     script {
                         def jenkinsUrl = env.JENKINS_URL ?: "http://localhost:8080/"
-                        env.MODE       = 'bulk'
+                        env.MODE       = params.MODE
+                        env.USERNAME   = params.USERNAME ?: ""
                         env.SEND_EMAIL = params.SEND_EMAIL ? 'true' : 'false'
 
                         echo "JENKINS_URL = ${jenkinsUrl}"
                         echo "MODE = ${env.MODE}"
+                        echo "USERNAME = ${env.USERNAME}"
                         echo "CSV_PATH = ${env.CSV_PATH}"
 
                         sh """
@@ -80,62 +82,53 @@ pipeline {
         }
 
         stage('Send Notifications') {
-            when {
-                expression { params.SEND_EMAIL == true }
-            }
             steps {
                 script {
-                    if (!fileExists('created_users.txt')) {
-                        echo "ℹ️ No created_users.txt file found — skipping notifications"
-                        return
-                    }
-
-                    def createdContent = readFile('created_users.txt').trim()
-                    if (!createdContent) {
-                        echo "ℹ️ No new users created — skipping notifications"
-                        return
-                    }
-
-                    def lines = createdContent.split('\n')
                     def jenkinsUrl = env.JENKINS_URL ?: "http://localhost:8080/"
-                    def createdCount = 0
-                    def userListForChat = ""
+                    def triggeredBy = 'Unknown'
+                    try { triggeredBy = currentBuild.getBuildCauses()[0]?.userId ?: 'Unknown' } catch (e) {}
 
-                    for (int i = 0; i < lines.length; i++) {
-                        def line = lines[i].trim()
-                        if (!line) continue
+                    // ── CREATED USERS NOTIFICATION ──
+                    if (params.SEND_EMAIL == true && fileExists('created_users.txt')) {
+                        def createdContent = readFile('created_users.txt').trim()
+                        if (createdContent) {
+                            def lines = createdContent.split('\n')
+                            def createdCount = 0
+                            def userListForChat = ""
 
-                        def parts = line.split('\\|')
-                        if (parts.length < 3) continue
+                            for (int i = 0; i < lines.length; i++) {
+                                def line = lines[i].trim()
+                                if (!line) continue
 
-                        createdCount++
-                        def username = parts[0]
-                        def email = parts[1]
-                        def password = parts[2]
-                        def rolesStr = parts.length > 3 ? parts[3] : ''
+                                def parts = line.split('\\|')
+                                if (parts.length < 3) continue
 
-                        def rolesList = rolesStr.split(',')
-                        def rolesFormatted = ''
-                        for (int j = 0; j < rolesList.length; j++) {
-                            if (rolesList[j]) {
-                                rolesFormatted += "• ${rolesList[j]}<br/>"
-                            }
-                        }
+                                createdCount++
+                                def username = parts[0]
+                                def email = parts[1]
+                                def password = parts[2]
+                                def rolesStr = parts.length > 3 ? parts[3] : ''
 
-                        // ── EMAIL: Send credentials to created user ──
-                        def htmlBody = """<!DOCTYPE html>
+                                def rolesList = rolesStr.split(',')
+                                def rolesFormatted = ''
+                                for (int j = 0; j < rolesList.length; j++) {
+                                    if (rolesList[j]) {
+                                        rolesFormatted += "• ${rolesList[j]}<br/>"
+                                    }
+                                }
+
+                                // Send Email
+                                def htmlBody = """<!DOCTYPE html>
 <html lang='en'>
 <head><meta charset='UTF-8'/></head>
 <body style='margin:0;padding:32px 16px;background:#f1f5f9;font-family:Arial,sans-serif;color:#334155'>
 <div style='max-width:620px;margin:0 auto'>
   <div style='background:#fff;border-radius:20px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07)'>
-
     <div style='background:linear-gradient(135deg,#166534 0%,#15803d 100%);padding:36px 32px;text-align:center;color:#fff'>
       <div style='font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:10px'>Montra Jenkins</div>
       <h1 style='font-size:24px;font-weight:800;margin-bottom:6px'>Welcome to Jenkins!</h1>
       <div style='font-size:14px;opacity:.8'>Your account has been created</div>
     </div>
-
     <div style='padding:28px 32px'>
       <table width='100%' cellpadding='0' cellspacing='0' style='border-collapse:collapse'>
       <tr>
@@ -153,56 +146,66 @@ pipeline {
         </td>
       </tr>
       </table>
-
       <div style='background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:14px;margin-top:12px'>
         <div style='font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#94a3b8;margin-bottom:8px'>Assigned Roles</div>
         <div style='font-size:13px;color:#166534'>${rolesFormatted}</div>
       </div>
-
       <a href='${jenkinsUrl}' style='display:block;text-align:center;background:linear-gradient(135deg,#166534 0%,#15803d 100%);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 24px;border-radius:12px;margin-top:20px'>Login to Jenkins</a>
     </div>
-
     <div style='text-align:center;padding:18px 32px;font-size:12px;color:#94a3b8'>
       Please change your password after first login.<br/>
       This notification was sent automatically by <strong style='color:#475569'>Montra CI/CD Pipeline</strong>.
     </div>
-
   </div>
 </div>
 </body>
 </html>"""
 
-                        emailext(
-                            to:       email,
-                            from:     'neelesh.r@montra.app',
-                            subject:  "[Jenkins] Your Account Has Been Created — ${username}",
-                            body:     htmlBody,
-                            mimeType: 'text/html'
-                        )
-                        echo "Email sent to ${email}"
+                                emailext(
+                                    to:       email,
+                                    from:     'neelesh.r@montra.app',
+                                    subject:  "[Jenkins] Your Account Has Been Created — ${username}",
+                                    body:     htmlBody,
+                                    mimeType: 'text/html'
+                                )
+                                echo "Email sent to ${email}"
+                                userListForChat += "• *${username}* (${email})\\n"
+                            }
 
-                        userListForChat += "• *${username}* (${email})\\n"
+                            if (userListForChat) {
+                                def gchatPayload = """{"cards":[{"header":{"title":"User Onboarding Complete","subtitle":"Jenkins User Management","imageUrl":"https://www.jenkins.io/images/logos/jenkins/jenkins.png","imageStyle":"AVATAR"},"sections":[{"widgets":[{"keyValue":{"topLabel":"Users Created","content":"${createdCount}"}},{"keyValue":{"topLabel":"Triggered By","content":"${triggeredBy}"}},{"keyValue":{"topLabel":"Build","content":"#${env.BUILD_NUMBER}"}}]},{"header":"New Users","widgets":[{"textParagraph":{"text":"${userListForChat}"}}]},{"widgets":[{"buttons":[{"textButton":{"text":"View Build","onClick":{"openLink":{"url":"${env.BUILD_URL}"}}}}]}]}]}]}"""
+
+                                withCredentials([string(credentialsId: 'GCHAT_JENKINS_WEBHOOK', variable: 'GCHAT_WEBHOOK_URL')]) {
+                                    sh """
+                                        curl -s -X POST -H 'Content-Type: application/json' \
+                                            -d '${gchatPayload}' \
+                                            "\${GCHAT_WEBHOOK_URL}"
+                                    """
+                                }
+                                echo "Google Chat notification sent"
+                            }
+                        }
                     }
 
-                    if (createdCount == 0) {
-                        echo "ℹ️ No new users created — skipping Google Chat notification"
-                        return
+                    // ── DELETED USERS NOTIFICATION ──
+                    if (fileExists('deleted_users.txt')) {
+                        def deletedContent = readFile('deleted_users.txt').trim()
+                        if (deletedContent) {
+                            def deletedLines = deletedContent.split('\n')
+                            def deletedListForChat = deletedLines.collect { "• *${it.trim()}*" }.join('\\n')
+
+                            def gchatDeletePayload = """{"cards":[{"header":{"title":"User Offboarding Complete","subtitle":"Jenkins User Management","imageUrl":"https://www.jenkins.io/images/logos/jenkins/jenkins.png","imageStyle":"AVATAR"},"sections":[{"widgets":[{"keyValue":{"topLabel":"Users Deleted","content":"${deletedLines.length}"}},{"keyValue":{"topLabel":"Triggered By","content":"${triggeredBy}"}},{"keyValue":{"topLabel":"Build","content":"#${env.BUILD_NUMBER}"}}]},{"header":"Deleted Users","widgets":[{"textParagraph":{"text":"${deletedListForChat}"}}]},{"widgets":[{"buttons":[{"textButton":{"text":"View Build","onClick":{"openLink":{"url":"${env.BUILD_URL}"}}}}]}]}]}]}"""
+
+                            withCredentials([string(credentialsId: 'GCHAT_JENKINS_WEBHOOK', variable: 'GCHAT_WEBHOOK_URL')]) {
+                                sh """
+                                    curl -s -X POST -H 'Content-Type: application/json' \
+                                        -d '${gchatDeletePayload}' \
+                                        "\${GCHAT_WEBHOOK_URL}"
+                                """
+                            }
+                            echo "Google Chat delete notification sent"
+                        }
                     }
-
-                    // ── GOOGLE CHAT: Notify user created (NO credentials) ──
-                    def triggeredBy = 'Unknown'
-                    try { triggeredBy = currentBuild.getBuildCauses()[0]?.userId ?: 'Unknown' } catch (e) {}
-
-                    def gchatPayload = """{"cards":[{"header":{"title":"User Onboarding Complete","subtitle":"Jenkins User Management","imageUrl":"https://www.jenkins.io/images/logos/jenkins/jenkins.png","imageStyle":"AVATAR"},"sections":[{"widgets":[{"keyValue":{"topLabel":"Users Created","content":"${createdCount}"}},{"keyValue":{"topLabel":"Triggered By","content":"${triggeredBy}"}},{"keyValue":{"topLabel":"Build","content":"#${env.BUILD_NUMBER}"}}]},{"header":"New Users","widgets":[{"textParagraph":{"text":"${userListForChat}"}}]},{"widgets":[{"buttons":[{"textButton":{"text":"View Build","onClick":{"openLink":{"url":"${env.BUILD_URL}"}}}}]}]}]}]}"""
-
-                    withCredentials([string(credentialsId: 'GCHAT_JENKINS_WEBHOOK', variable: 'GCHAT_WEBHOOK_URL')]) {
-                        sh """
-                            curl -s -X POST -H 'Content-Type: application/json' \
-                                -d '${gchatPayload}' \
-                                "\${GCHAT_WEBHOOK_URL}"
-                        """
-                    }
-                    echo "Google Chat notification sent"
                 }
             }
         }
@@ -210,10 +213,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ User onboarding completed successfully"
+            echo "✅ User onboarding/offboarding completed successfully"
         }
         failure {
-            echo "❌ User onboarding failed"
+            echo "❌ User onboarding/offboarding failed"
         }
     }
 }
