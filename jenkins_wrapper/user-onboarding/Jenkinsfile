@@ -1,23 +1,16 @@
-@Library('ci-jenkins-shared-libraries') _
+@Library('ci-jenkins-shared-libraries@main') _
 
 pipeline {
     agent any
-
-    environment {
-        JENKINS_URL   = "${env.JENKINS_URL}"
-        ADMIN_USER    = credentials('jenkins-admin-user')
-        ADMIN_TOKEN   = credentials('jenkins-admin-token')
-        SMTP_HOST     = credentials('smtp-host')
-        SMTP_PORT     = '25'
-    }
 
     parameters {
         choice(name: 'MODE', choices: ['bulk', 'single'], description: 'Onboarding mode — bulk (CSV) or single user')
         string(name: 'USERNAME', defaultValue: '', description: 'Username (only for single mode)')
         string(name: 'EMAIL', defaultValue: '', description: 'Email address (only for single mode)')
-        string(name: 'ROLES', defaultValue: 'issuing-read,issuing-execute,acquiring-read,acquiring-execute,sigma-read,sigma-execute', description: 'Comma-separated roles to assign (only for single mode)')
+        string(name: 'ROLES', defaultValue: 'apigateway-read,apigateway-execute,auth-service-read,auth-service-execute,design-ui-framework-read,design-ui-framework-execute,instacard-mock-apis-read,instacard-mock-apis-execute,instacard-user-service-read,instacard-user-service-execute,montra-bom-read,montra-bom-execute,sdk-instacard-frontend-read,sdk-instacard-frontend-execute,virtualcard-service-read,virtualcard-service-execute', description: 'Comma-separated roles to assign (only for single mode)')
         string(name: 'CSV_PATH', defaultValue: 'resources/user-onboarding/users.csv', description: 'Path to users CSV file (for bulk mode)')
         booleanParam(name: 'SEND_EMAIL', defaultValue: false, description: 'Send credentials email to user after creation')
+        string(name: 'ADMIN_CRED_ID', defaultValue: 'JENKINS_ADMIN_CREDS', description: 'Jenkins credential ID for admin username/password')
     }
 
     stages {
@@ -62,13 +55,25 @@ pipeline {
 
         stage('Run User Onboarding') {
             steps {
-                script {
-                    env.MODE       = 'bulk'
-                    env.SEND_EMAIL = params.SEND_EMAIL ? 'true' : 'false'
+                withCredentials([usernamePassword(
+                    credentialsId: params.ADMIN_CRED_ID,
+                    usernameVariable: 'ADMIN_USER',
+                    passwordVariable: 'ADMIN_TOKEN'
+                )]) {
+                    script {
+                        def jenkinsUrl = env.JENKINS_URL ?: "http://10.10.64.2:8080/"
+                        env.MODE       = 'bulk'
+                        env.SEND_EMAIL = params.SEND_EMAIL ? 'true' : 'false'
 
-                    sh """
-                        python3 resources/user-onboarding/user-onboarding.py
-                    """
+                        echo "JENKINS_URL = ${jenkinsUrl}"
+                        echo "MODE = ${env.MODE}"
+                        echo "CSV_PATH = ${env.CSV_PATH}"
+
+                        sh """
+                            export JENKINS_URL="${jenkinsUrl}"
+                            python3 resources/user-onboarding/user-onboarding.py
+                        """
+                    }
                 }
             }
         }
@@ -80,9 +85,6 @@ pipeline {
         }
         failure {
             echo "❌ User onboarding failed"
-        }
-        always {
-            cleanWs()
         }
     }
 }

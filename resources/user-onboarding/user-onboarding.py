@@ -1,5 +1,6 @@
 import requests
 import os
+import sys
 import csv
 import random
 import string
@@ -185,6 +186,7 @@ def bulk_mode():
 
     except Exception as e:
         logging.error(f"❌ Bulk failed: {e}")
+        sys.exit(1)
 
 # ==========================
 # MAIN
