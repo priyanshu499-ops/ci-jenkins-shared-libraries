@@ -10,8 +10,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
         ]
     ],
     'instacard-mock-apis': [
@@ -25,8 +24,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
         ]
     ],
     'instacard-user-service': [
@@ -40,8 +38,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
         ]
     ],
     'virtualcard-service': [
@@ -55,8 +52,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
         ]
     ],
     'sdk-instacard-frontend': [
@@ -70,8 +66,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
        ]
     ],
     'design-ui-framework': [
@@ -85,8 +80,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
         ]
     ],
     'apigateway': [
@@ -100,8 +94,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
         ]
     ],
     'montra-bom': [
@@ -115,8 +108,7 @@ def ciJobs = [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
             [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
             [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
-            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
-            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
+            
         ]
     ]
 ]
