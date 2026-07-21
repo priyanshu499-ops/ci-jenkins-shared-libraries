@@ -11,7 +11,7 @@ import logging
 # ENV
 # ==========================
 
-JENKINS_URL = os.environ.get("JENKINS_URL")
+JENKINS_URL = (os.environ.get("JENKINS_URL") or "http://localhost:8080").rstrip('/')
 ADMIN_USER  = os.environ.get("ADMIN_USER")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 
@@ -24,7 +24,7 @@ RESULTS_FILE = os.getenv("RESULTS_FILE", "onboarding_results.json")
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 # ==========================
-# PASSWORD
+# PASSWORD GENERATOR
 # ==========================
 
 def generate_password(length=12):
@@ -32,15 +32,18 @@ def generate_password(length=12):
     return ''.join(random.choice(chars) for _ in range(length))
 
 # ==========================
-# CRUMB
+# CRUMB ISSUER
 # ==========================
 
 def get_crumb():
     url = f"{JENKINS_URL}/crumbIssuer/api/json"
-    res = requests.get(url, auth=(ADMIN_USER, ADMIN_TOKEN))
-    if res.status_code == 200:
-        data = res.json()
-        return data["crumbRequestField"], data["crumb"]
+    try:
+        res = requests.get(url, auth=(ADMIN_USER, ADMIN_TOKEN))
+        if res.status_code == 200:
+            data = res.json()
+            return data["crumbRequestField"], data["crumb"]
+    except Exception as e:
+        logging.warning(f"Could not get crumb: {e}")
     return None, None
 
 # ==========================
@@ -49,12 +52,14 @@ def get_crumb():
 
 def user_exists(username):
     url = f"{JENKINS_URL}/user/{username}/api/json"
-    res = requests.get(url, auth=(ADMIN_USER, ADMIN_TOKEN))
-
-    if res.status_code == 200:
-        data = res.json()
-        if data.get("id") == username or data.get("fullName") == username:
-            return True
+    try:
+        res = requests.get(url, auth=(ADMIN_USER, ADMIN_TOKEN))
+        if res.status_code == 200:
+            data = res.json()
+            if data.get("id") == username or data.get("fullName") == username:
+                return True
+    except Exception as e:
+        logging.warning(f"Error checking user {username}: {e}")
 
     return False
 
@@ -64,7 +69,6 @@ def user_exists(username):
 
 def create_user(username, password, email):
     crumb_field, crumb = get_crumb()
-
     url = f"{JENKINS_URL}/securityRealm/createAccountByAdmin"
 
     payload = {
@@ -77,15 +81,30 @@ def create_user(username, password, email):
 
     headers = {crumb_field: crumb} if crumb else {}
 
-    res = requests.post(url, data=payload, headers=headers,
-                        auth=(ADMIN_USER, ADMIN_TOKEN))
+    res = requests.post(url, data=payload, headers=headers, auth=(ADMIN_USER, ADMIN_TOKEN))
 
     if res.status_code in [200, 302]:
         logging.info(f"[CREATED] {username}")
         return True
     else:
-        logging.error(f"[FAILED CREATE] {username} → {res.text}")
+        logging.error(f"[FAILED CREATE] {username} → Status {res.status_code}")
         return False
+
+# ==========================
+# UNASSIGN ROLES
+# ==========================
+
+def unassign_roles(username):
+    crumb_field, crumb = get_crumb()
+    headers = {crumb_field: crumb} if crumb else {}
+
+    for rtype in ["projectRoles", "globalRoles"]:
+        url = f"{JENKINS_URL}/role-strategy/strategy/unassignUser"
+        payload = {"type": rtype, "sid": username}
+        try:
+            requests.post(url, data=payload, headers=headers, auth=(ADMIN_USER, ADMIN_TOKEN))
+        except Exception:
+            pass
 
 # ==========================
 # DELETE USER
@@ -93,19 +112,28 @@ def create_user(username, password, email):
 
 def delete_user(username):
     crumb_field, crumb = get_crumb()
-
-    url = f"{JENKINS_URL}/user/{username}/doDelete"
-
     headers = {crumb_field: crumb} if crumb else {}
 
-    res = requests.post(url, headers=headers, auth=(ADMIN_USER, ADMIN_TOKEN))
+    # Unassign roles first
+    unassign_roles(username)
 
-    if res.status_code in [200, 302]:
-        logging.info(f"[DELETED] {username}")
-        return True
-    else:
-        logging.error(f"[FAILED DELETE] {username} → {res.text}")
-        return False
+    # Try standard endpoints for user deletion
+    endpoints = [
+        f"{JENKINS_URL}/user/{username}/doDelete",
+        f"{JENKINS_URL}/securityRealm/user/{username}/doDelete"
+    ]
+
+    for url in endpoints:
+        try:
+            res = requests.post(url, headers=headers, auth=(ADMIN_USER, ADMIN_TOKEN))
+            if res.status_code in [200, 302]:
+                logging.info(f"[DELETED] {username}")
+                return True
+        except Exception as e:
+            logging.warning(f"Error calling {url}: {e}")
+
+    logging.error(f"[FAILED DELETE] {username}")
+    return False
 
 # ==========================
 # ROLE ASSIGN
@@ -123,9 +151,7 @@ def assign_role(username, role):
 
     headers = {crumb_field: crumb} if crumb else {}
 
-    requests.post(url, data=payload, headers=headers,
-                  auth=(ADMIN_USER, ADMIN_TOKEN))
-
+    requests.post(url, data=payload, headers=headers, auth=(ADMIN_USER, ADMIN_TOKEN))
     logging.info(f"[ROLE] {role} → {username}")
 
 # ==========================
@@ -147,7 +173,7 @@ def bulk_mode():
 
                 password = generate_password()
 
-                # 🔥 CHECK USER
+                # CHECK USER
                 if user_exists(username):
                     logging.info(f"{username} user already exists")
                     results.append({
@@ -157,9 +183,9 @@ def bulk_mode():
                         "status": "skipped",
                         "reason": "already exists"
                     })
-                    continue   # 👈 FULL SKIP (no role change)
+                    continue
 
-                # ✅ CREATE USER
+                # CREATE USER
                 created = create_user(username, password, email)
 
                 if not created:
@@ -172,11 +198,11 @@ def bulk_mode():
                     })
                     continue
 
-                # ✅ ASSIGN ROLES (ONLY FOR NEW USER)
+                # ASSIGN ROLES
                 for role in roles:
                     assign_role(username, role)
 
-                # ✅ SAVE RESULT
+                # SAVE RESULT
                 results.append({
                     "username": username,
                     "email": email,
@@ -187,11 +213,9 @@ def bulk_mode():
                 roles_str = ",".join(roles)
                 created_lines.append(f"{username}|{email}|{password}|{roles_str}")
 
-        # Write results to JSON file
         with open(RESULTS_FILE, 'w') as f:
             json.dump(results, f, indent=2)
 
-        # Write created users text file for simple Jenkinsfile parsing
         with open('created_users.txt', 'w') as f:
             f.write("\n".join(created_lines))
 
