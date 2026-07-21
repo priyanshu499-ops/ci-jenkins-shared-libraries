@@ -1,28 +1,4 @@
 def ciJobs = [
-    'spring-boot-realworld': [
-        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
-        credentials  : 'github-token',
-        branch       : 'main',
-        scriptPath   : 'jenkins_wrapper/CI/spring-boot-realworld/Jenkinsfile',
-        owner        : 'priyanshu499-ops',
-        logRotatorNum: 5, // keep only last 5 builds' history
-        parameters   : [
-            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
-        ]
-    ],
-    'simple-nodejs-app': [
-        url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
-        credentials  : 'github-token',
-        branch       : 'main',
-        scriptPath   : 'jenkins_wrapper/CI/simple-nodejs-app/Jenkinsfile',
-        owner        : 'priyanshu499-ops',
-        logRotatorNum: 5, // keep only last 5 builds' history
-        parameters   : [
-            [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
-        ]
-    ],
     'auth-service': [
         url          : 'https://github.com/priyanshu499-ops/ci-jenkins-shared-libraries.git',
         credentials  : 'github-token',
@@ -32,7 +8,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
         ]
     ],
     'instacard-mock-apis': [
@@ -44,7 +23,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
         ]
     ],
     'instacard-user-service': [
@@ -56,7 +38,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
         ]
     ],
     'virtualcard-service': [
@@ -68,7 +53,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
         ]
     ],
     'sdk-instacard-frontend': [
@@ -80,7 +68,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
        ]
     ],
     'design-ui-framework': [
@@ -92,7 +83,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
         ]
     ],
     'apigateway': [
@@ -104,7 +98,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
         ]
     ],
     'montra-bom': [
@@ -116,7 +113,10 @@ def ciJobs = [
         logRotatorNum:  5,
         parameters   : [
             [name: 'BRANCH', defaultValue: 'main', description: 'Branch to build'],
-            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment']
+            [name: 'ENVIRONMENT', defaultValue: 'dev', description: 'Environment'],
+            [type: 'boolean', name: 'TRIGGER_CD', defaultValue: true, description: 'Trigger CD pipeline after successful CI (Yes/No)'],
+            [name: 'CLUSTER_NAME', defaultValue: 'dev', description: 'Target cluster name for deployment'],
+            [name: 'LAST_DEPLOY_TAG', defaultValue: '', description: 'Last deployed image tag ID (for reference)']
         ]
     ]
 ]
@@ -130,7 +130,11 @@ ciJobs.each { jobName, config ->
         }
         parameters {
             config.parameters.each { param ->
-                stringParam(param.name, param.defaultValue, param.description)
+                if (param.type == 'boolean') {
+                    booleanParam(param.name, param.defaultValue, param.description)
+                } else {
+                    stringParam(param.name, param.defaultValue, param.description)
+                }
             }
         }
         definition {
