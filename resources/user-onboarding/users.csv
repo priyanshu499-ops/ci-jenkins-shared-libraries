@@ -1,2 +1,2 @@
 username,email,roles
-piyush,piyush.upadhyay@pinelabs.com,"issuing-read,issuing-execute,acquiring-read,acquiring-execute,sigma-read,sigma-execute"
+neelesh,neelesh.r@montra.app,"apigateway-read,apigateway-execute,auth-service-read,auth-service-execute,design-ui-framework-read,design-ui-framework-execute,instacard-mock-apis-read,instacard-mock-apis-execute,instacard-user-service-read,instacard-user-service-execute,montra-bom-read,montra-bom-execute,sdk-instacard-frontend-read,sdk-instacard-frontend-execute,virtualcard-service-read,virtualcard-service-execute"
