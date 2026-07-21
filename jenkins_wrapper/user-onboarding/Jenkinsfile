@@ -85,26 +85,42 @@ pipeline {
             }
             steps {
                 script {
-                    def results = readJSON file: 'onboarding_results.json'
+                    if (!fileExists('created_users.txt')) {
+                        echo "ℹ️ No created_users.txt file found — skipping notifications"
+                        return
+                    }
+
+                    def createdContent = readFile('created_users.txt').trim()
+                    if (!createdContent) {
+                        echo "ℹ️ No new users created — skipping notifications"
+                        return
+                    }
+
+                    def lines = createdContent.split('\n')
                     def jenkinsUrl = env.JENKINS_URL ?: "http://localhost:8080/"
                     def createdCount = 0
                     def userListForChat = ""
 
-                    for (int i = 0; i < results.size(); i++) {
-                        def entry = results[i]
-                        if (entry.status != 'created') {
-                            continue
-                        }
+                    for (int i = 0; i < lines.length; i++) {
+                        def line = lines[i].trim()
+                        if (!line) continue
+
+                        def parts = line.split('\\|')
+                        if (parts.length < 3) continue
 
                         createdCount++
-                        def username = entry.username.toString()
-                        def email = entry.email.toString()
-                        def password = entry.password.toString()
-                        def rolesList = []
-                        for (int j = 0; j < entry.roles.size(); j++) {
-                            rolesList.add(entry.roles[j].toString())
+                        def username = parts[0]
+                        def email = parts[1]
+                        def password = parts[2]
+                        def rolesStr = parts.length > 3 ? parts[3] : ''
+
+                        def rolesList = rolesStr.split(',')
+                        def rolesFormatted = ''
+                        for (int j = 0; j < rolesList.length; j++) {
+                            if (rolesList[j]) {
+                                rolesFormatted += "• ${rolesList[j]}<br/>"
+                            }
                         }
-                        def rolesFormatted = rolesList.collect { "• ${it}" }.join('<br/>')
 
                         // ── EMAIL: Send credentials to created user ──
                         def htmlBody = """<!DOCTYPE html>
@@ -143,11 +159,11 @@ pipeline {
         <div style='font-size:13px;color:#166534'>${rolesFormatted}</div>
       </div>
 
-      <a href='${jenkinsUrl}' style='display:block;text-align:center;background:linear-gradient(135deg,#166534 0%,#15803d 100%);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 24px;border-radius:12px;margin-top:20px'>&#128279; Login to Jenkins</a>
+      <a href='${jenkinsUrl}' style='display:block;text-align:center;background:linear-gradient(135deg,#166534 0%,#15803d 100%);color:#fff;text-decoration:none;font-weight:700;font-size:14px;padding:14px 24px;border-radius:12px;margin-top:20px'>Login to Jenkins</a>
     </div>
 
     <div style='text-align:center;padding:18px 32px;font-size:12px;color:#94a3b8'>
-      ⚠️ Please change your password after first login.<br/>
+      Please change your password after first login.<br/>
       This notification was sent automatically by <strong style='color:#475569'>Montra CI/CD Pipeline</strong>.
     </div>
 
@@ -159,11 +175,11 @@ pipeline {
                         emailext(
                             to:       email,
                             from:     'neelesh.r@montra.app',
-                            subject:  "✅ [Jenkins] Your Account Has Been Created — ${username}",
+                            subject:  "[Jenkins] Your Account Has Been Created — ${username}",
                             body:     htmlBody,
                             mimeType: 'text/html'
                         )
-                        echo "📧 Email sent to ${email}"
+                        echo "Email sent to ${email}"
 
                         userListForChat += "• *${username}* (${email})\\n"
                     }
@@ -177,7 +193,7 @@ pipeline {
                     def triggeredBy = 'Unknown'
                     try { triggeredBy = currentBuild.getBuildCauses()[0]?.userId ?: 'Unknown' } catch (e) {}
 
-                    def gchatPayload = """{"cards":[{"header":{"title":"👤 User Onboarding Complete","subtitle":"Jenkins User Management","imageUrl":"https://www.jenkins.io/images/logos/jenkins/jenkins.png","imageStyle":"AVATAR"},"sections":[{"widgets":[{"keyValue":{"topLabel":"Users Created","content":"${createdCount}"}},{"keyValue":{"topLabel":"Triggered By","content":"${triggeredBy}"}},{"keyValue":{"topLabel":"Build","content":"#${env.BUILD_NUMBER}"}}]},{"header":"New Users","widgets":[{"textParagraph":{"text":"${userListForChat}"}}]},{"widgets":[{"buttons":[{"textButton":{"text":"🔗 View Build","onClick":{"openLink":{"url":"${env.BUILD_URL}"}}}}]}]}]}]}"""
+                    def gchatPayload = """{"cards":[{"header":{"title":"User Onboarding Complete","subtitle":"Jenkins User Management","imageUrl":"https://www.jenkins.io/images/logos/jenkins/jenkins.png","imageStyle":"AVATAR"},"sections":[{"widgets":[{"keyValue":{"topLabel":"Users Created","content":"${createdCount}"}},{"keyValue":{"topLabel":"Triggered By","content":"${triggeredBy}"}},{"keyValue":{"topLabel":"Build","content":"#${env.BUILD_NUMBER}"}}]},{"header":"New Users","widgets":[{"textParagraph":{"text":"${userListForChat}"}}]},{"widgets":[{"buttons":[{"textButton":{"text":"View Build","onClick":{"openLink":{"url":"${env.BUILD_URL}"}}}}]}]}]}]}"""
 
                     withCredentials([string(credentialsId: 'GCHAT_JENKINS_WEBHOOK', variable: 'GCHAT_WEBHOOK_URL')]) {
                         sh """
@@ -186,7 +202,7 @@ pipeline {
                                 "\${GCHAT_WEBHOOK_URL}"
                         """
                     }
-                    echo "💬 Google Chat notification sent"
+                    echo "Google Chat notification sent"
                 }
             }
         }

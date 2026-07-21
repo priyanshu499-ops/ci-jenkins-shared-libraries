@@ -114,6 +114,7 @@ def assign_role(username, role):
 
 def bulk_mode():
     results = []
+    created_lines = []
 
     try:
         with open(CSV_PATH) as f:
@@ -128,7 +129,7 @@ def bulk_mode():
 
                 # 🔥 CHECK USER
                 if user_exists(username):
-                    logging.info(f"[SKIPPED - EXISTS] {username}")
+                    logging.info(f"{username} user already exists")
                     results.append({
                         "username": username,
                         "email": email,
@@ -155,7 +156,7 @@ def bulk_mode():
                 for role in roles:
                     assign_role(username, role)
 
-                # ✅ SAVE RESULT (for Jenkinsfile to send email/gchat)
+                # ✅ SAVE RESULT
                 results.append({
                     "username": username,
                     "email": email,
@@ -163,15 +164,21 @@ def bulk_mode():
                     "roles": roles,
                     "status": "created"
                 })
+                roles_str = ",".join(roles)
+                created_lines.append(f"{username}|{email}|{password}|{roles_str}")
 
         # Write results to JSON file
         with open(RESULTS_FILE, 'w') as f:
             json.dump(results, f, indent=2)
 
-        logging.info(f"✅ Bulk completed — results saved to {RESULTS_FILE}")
+        # Write created users text file for simple Jenkinsfile parsing
+        with open('created_users.txt', 'w') as f:
+            f.write("\n".join(created_lines))
+
+        logging.info(f"Bulk completed — results saved to {RESULTS_FILE}")
 
     except Exception as e:
-        logging.error(f"❌ Bulk failed: {e}")
+        logging.error(f"Bulk failed: {e}")
         sys.exit(1)
 
 # ==========================
