@@ -2,11 +2,10 @@ import requests
 import os
 import sys
 import csv
+import json
 import random
 import string
 import logging
-import smtplib
-from email.mime.text import MIMEText
 
 # ==========================
 # ENV
@@ -17,12 +16,9 @@ ADMIN_USER  = os.environ.get("ADMIN_USER")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 
 MODE       = os.environ.get("MODE")
-SEND_EMAIL = os.environ.get("SEND_EMAIL", "false").lower() == "true"
 
 CSV_PATH = os.getenv("CSV_PATH", "resources/user-onboarding/users.csv")
-
-SMTP_HOST = os.environ.get("SMTP_HOST")
-SMTP_PORT = int(os.environ.get("SMTP_PORT", 25))
+RESULTS_FILE = os.getenv("RESULTS_FILE", "onboarding_results.json")
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
@@ -116,43 +112,12 @@ def assign_role(username, role):
     logging.info(f"[ROLE] {role} → {username}")
 
 # ==========================
-# EMAIL
-# ==========================
-
-def send_email(to_email, username, password, roles):
-    if not SEND_EMAIL:
-        return
-
-    body = f"""
-Hello,
-
-Your Jenkins account is created.
-
-Username: {username}
-Password: {password}
-Roles: {roles}
-
-URL: {JENKINS_URL}
-"""
-
-    msg = MIMEText(body)
-    msg["Subject"] = "Jenkins Access"
-    msg["From"] = "jenkins@company.com"
-    msg["To"] = to_email
-
-    try:
-        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-        server.sendmail(msg["From"], [to_email], msg.as_string())
-        server.quit()
-        logging.info(f"[EMAIL SENT] {to_email}")
-    except Exception as e:
-        logging.error(f"[EMAIL FAILED] {e}")
-
-# ==========================
 # BULK MODE
 # ==========================
 
 def bulk_mode():
+    results = []
+
     try:
         with open(CSV_PATH) as f:
             reader = csv.DictReader(f)
@@ -167,22 +132,46 @@ def bulk_mode():
                 # 🔥 CHECK USER
                 if user_exists(username):
                     logging.info(f"[SKIPPED - EXISTS] {username}")
+                    results.append({
+                        "username": username,
+                        "email": email,
+                        "roles": roles,
+                        "status": "skipped",
+                        "reason": "already exists"
+                    })
                     continue   # 👈 FULL SKIP (no role change)
 
                 # ✅ CREATE USER
                 created = create_user(username, password, email)
 
                 if not created:
+                    results.append({
+                        "username": username,
+                        "email": email,
+                        "roles": roles,
+                        "status": "failed",
+                        "reason": "create failed"
+                    })
                     continue
 
                 # ✅ ASSIGN ROLES (ONLY FOR NEW USER)
                 for role in roles:
                     assign_role(username, role)
 
-                # ✅ EMAIL
-                send_email(email, username, password, ",".join(roles))
+                # ✅ SAVE RESULT (for Jenkinsfile to send email/gchat)
+                results.append({
+                    "username": username,
+                    "email": email,
+                    "password": password,
+                    "roles": roles,
+                    "status": "created"
+                })
 
-        logging.info("✅ Bulk completed")
+        # Write results to JSON file
+        with open(RESULTS_FILE, 'w') as f:
+            json.dump(results, f, indent=2)
+
+        logging.info(f"✅ Bulk completed — results saved to {RESULTS_FILE}")
 
     except Exception as e:
         logging.error(f"❌ Bulk failed: {e}")
