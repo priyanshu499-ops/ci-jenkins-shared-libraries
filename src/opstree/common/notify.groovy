@@ -244,7 +244,7 @@ def notification(Map step_params) {
 
     <!-- Header -->
     <div style='background:${headerGrad};padding:36px 32px;text-align:center;color:#fff'>
-      <div style='font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:10px'>&#128296; Montra CI/CD Pipeline</div>
+      <div style='font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.75;margin-bottom:10px'>Montra CI/CD Pipeline</div>
       <h1 style='font-size:24px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px'>${env.JOB_NAME}</h1>
       <div style='font-size:14px;opacity:.8'>Build #${env.BUILD_NUMBER} &nbsp;&middot;&nbsp; ${jobStartTime} IST</div>
     </div>

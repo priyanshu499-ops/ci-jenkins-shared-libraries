@@ -43,20 +43,17 @@ def get_crumb():
     return None, None
 
 # ==========================
-# CORRECT USER CHECK (FINAL FIX)
+# USER EXISTS CHECK
 # ==========================
 
 def user_exists(username):
-    url = f"{JENKINS_URL}/asynchPeople/api/json"
+    url = f"{JENKINS_URL}/user/{username}/api/json"
     res = requests.get(url, auth=(ADMIN_USER, ADMIN_TOKEN))
 
-    if res.status_code != 200:
-        return False
-
-    users = res.json().get("users", [])
-
-    for u in users:
-        if u.get("user", {}).get("id") == username:
+    if res.status_code == 200:
+        data = res.json()
+        # Verify it's a real user (not auto-created placeholder)
+        if data.get("id") == username or data.get("fullName") == username:
             return True
 
     return False
