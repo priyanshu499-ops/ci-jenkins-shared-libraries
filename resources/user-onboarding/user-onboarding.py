@@ -11,7 +11,7 @@ import logging
 # ENV
 # ==========================
 
-JENKINS_URL = (os.environ.get("JENKINS_URL") or "http://localhost:8080").rstrip('/')
+JENKINS_URL = (os.environ.get("JENKINS_URL") or "http://10.10.64.2:8080").rstrip('/')
 ADMIN_USER  = os.environ.get("ADMIN_USER")
 ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN")
 
