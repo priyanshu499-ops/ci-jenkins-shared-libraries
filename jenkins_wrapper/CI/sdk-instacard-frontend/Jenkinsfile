@@ -15,7 +15,7 @@ node {
     // DEPENDENCY SCANNING
     dependency_check                          : 'true',
     dependency_scan_tool                      : 'owasp',
-    owasp_project_name                        : 'spring-boot-gradle',  
+    owasp_project_name                        : 'sdk-instacard-frontend',  
     owasp_report_publish                      : 'true',
     owasp_report_format                       : 'html',
     fail_job_if_dependency_returned_exception : 'false',
@@ -25,8 +25,8 @@ node {
     fail_job_if_leak_detected        : false,
     gitleaks_scan_mode               : 'full',   // options: latest, full, last5, last10
     gitleaks_report_jenkins_publish  : true,
-    // BUILD ARTIFACT (npm install in node container)
-    perform_code_build               : false,  // Dockerfile handles npm install — no need for separate step
+    // BUILD ARTIFACT (Node.js build with .npmrc.local auth)
+    perform_code_build               : true,
     node_version                     : '20',
     build_secret_creds_id            : 'AZURE_FACE_API_KEY',
     build_secret_env_var             : 'AZURE_FACE_API_KEY',
@@ -43,8 +43,8 @@ node {
     fail_job_if_analysis_returned_exception : 'false',
     jenkins_sonarqube_token_creds_id        : 'SONARQUBE_TOKEN',
     source_code_path                        : "", 
-    // BUILD DOCKERFILE (handles Azure token fetch + npm ci + nginx image via BuildKit secret)
-    perform_build_dockerfile         : true,
+    // BUILD DOCKERFILE
+    perform_build_dockerfile         : false,
     dockerfile_location              : '/Dockerfile',
     dockerfile_context               : '',
     image_name                       : 'sdk-instacard-frontend',
