@@ -27,13 +27,12 @@ def unit_test(Map step_params) {
     build_secret_env_var  = step_params.build_secret_env_var  ?: 'BUILD_SECRET'
 
     unit_test_reports_path = "${step_params.unit_test_reports_path ?: ''}"
-    findbugs_test_report_path = "${step_params.findbugs_test_report_path ?: ''}"
-
     repo_dir = parser.fetch_git_repo_name('repo_url':"${repo_url}")
     def project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
-
     dir(project_path) {
         try {
+            def test_cmd = "npm install && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage || npm test)"
+
             if (build_secret_creds_id) {
                 // Private Azure DevOps npm feed — fetch short-lived token and write .npmrc
                 withCredentials([string(credentialsId: build_secret_creds_id, variable: 'THE_SECRET')]) {
@@ -63,7 +62,7 @@ def unit_test(Map step_params) {
                         sh """docker run --rm \
                             -v ${project_path}:/app \
                             -v ${project_path}/.npmrc.unittest:/app/.npmrc:ro \
-                            -w /app node:${node_version} sh -c "npm install && (npm run test:coverage --if-present || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --if-present || npm test --if-present)" """
+                            -w /app node:${node_version} sh -c '${test_cmd}'"""
                     } finally {
                         sh "rm -f ${project_path}/.npmrc.unittest"
                         logger.logger('msg':'Cleaned up .npmrc.unittest', 'level':'INFO')
@@ -71,7 +70,9 @@ def unit_test(Map step_params) {
                 }
             } else {
                 // No private feed credentials — plain npm install & test with coverage
-                sh """ docker run --rm -v \${WORKSPACE}/${repo_dir}${source_code_path ?: ''}:/app -w /app node:${node_version} sh -c "npm install && (npm run test:coverage --if-present || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --if-present || npm test --if-present)" """
+                sh """docker run --rm \
+                    -v ${project_path}:/app \
+                    -w /app node:${node_version} sh -c '${test_cmd}'"""
             }
 
             def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit.xml, **/junit-*.xml, **/test-results*.xml, **/build/test-results/test/*.xml'
