@@ -27,7 +27,7 @@ node {
     // CREDS SCANNING (GITLEAKS)
     gitleaks_check                   : true,
     fail_job_if_leak_detected        : false,
-    gitleaks_scan_mode               : 'full',   // options: latest, full, last5, last10
+    gitleaks_scan_mode               : 'latest',  // options: latest, full, last5, last10
     gitleaks_report_jenkins_publish  : true,
 
 

@@ -139,7 +139,9 @@ def call(Map step_params) {
                                             unit_test_reports_path: "${get_params_value(enableOverride, step_params, 'unit_test_reports_path')}",
                                             findbugs_test_report_path: "${get_params_value(enableOverride, step_params, 'findbugs_test_report_path')}",
                                             source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
-                                            node_version: "${get_params_value(enableOverride, step_params, 'node_version')}"
+                                            node_version: "${get_params_value(enableOverride, step_params, 'node_version')}",
+                                            build_secret_creds_id: "${get_params_value(enableOverride, step_params, 'build_secret_creds_id')}",
+                                            build_secret_env_var: "${get_params_value(enableOverride, step_params, 'build_secret_env_var')}"
                                     )
                         }
                 }

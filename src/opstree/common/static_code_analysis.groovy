@@ -71,7 +71,7 @@ def sonar(Map step_params) {
                                 sh "${docker_cmd}"
                                 logger.logger('msg':'Static Code Analysis Scanning Complete', 'level':'INFO')
                             }
-                            sleep(60)
+                            sleep(10)
                             timeout(time: 1, unit: 'MINUTES') {
                                 dir("${WORKSPACE}/${repo_dir}") {
                                     def qg = waitForQualityGate()
@@ -94,7 +94,7 @@ def sonar(Map step_params) {
                                 sh "${docker_cmd}"
                                 logger.logger('msg':'Static Code Analysis Scanning Complete', 'level':'INFO')
                             }
-                            sleep(60)
+                            sleep(10)
                             timeout(time: 1, unit: 'MINUTES') {
                                 dir("${WORKSPACE}/${repo_dir}") {
                                     def qg = waitForQualityGate()
