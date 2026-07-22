@@ -4,7 +4,7 @@ import opstree.common.*
 
 def static_code_analysis_factory(Map step_params) {
     logger = new logger()
-    if (step_params.static_code_analysis_check == 'true') {
+    if (step_params.static_code_analysis_check?.toBoolean() || step_params.static_code_analysis_check == 'true' || step_params.static_code_analysis_check == true) {
         sonar(step_params)
     }
     else {

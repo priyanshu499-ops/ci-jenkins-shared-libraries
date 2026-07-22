@@ -31,7 +31,7 @@ def unit_test(Map step_params) {
     def project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
     dir(project_path) {
         try {
-            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml || npm test)"
+            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --coverage.reporter=text --coverage.reporter=lcov --coverage.reporter=html || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml || npm test)"
 
             if (build_secret_creds_id) {
                 // Private Azure DevOps npm feed — fetch short-lived token and write .npmrc
@@ -75,25 +75,25 @@ def unit_test(Map step_params) {
                     -w /app node:${node_version} sh -c '${test_cmd}'"""
             }
 
-            def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit.xml, **/junit-*.xml, **/test-results*.xml, **/build/test-results/test/*.xml'
+            def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit*.xml'
             reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_test_report_path}")
 
-            // Publish HTML coverage report if generated
-            if (fileExists("${project_path}/coverage/lcov-report/index.html")) {
-                publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage/lcov-report", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
-            } else if (fileExists("${project_path}/coverage/index.html")) {
-                publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
+            // Publish HTML coverage report if generated (use relative path from current dir)
+            if (fileExists("coverage/lcov-report/index.html")) {
+                publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage/lcov-report', reportFiles: 'index.html', reportName: 'Unit Test Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
+            } else if (fileExists("coverage/index.html")) {
+                publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage', reportFiles: 'index.html', reportName: 'Unit Test Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
             }
         }
         catch (Exception e) {
             // Still publish any XML / HTML reports if generated before exception
-            def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit.xml, **/junit-*.xml, **/test-results*.xml, **/build/test-results/test/*.xml'
+            def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit*.xml'
             try {
                 reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_test_report_path}")
-                if (fileExists("${project_path}/coverage/lcov-report/index.html")) {
-                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage/lcov-report", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
-                } else if (fileExists("${project_path}/coverage/index.html")) {
-                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
+                if (fileExists("coverage/lcov-report/index.html")) {
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage/lcov-report', reportFiles: 'index.html', reportName: 'Unit Test Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
+                } else if (fileExists("coverage/index.html")) {
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage', reportFiles: 'index.html', reportName: 'Unit Test Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
                 }
             } catch (ignored) {}
 
