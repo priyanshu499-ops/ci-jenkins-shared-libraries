@@ -18,26 +18,27 @@ def build_artifact(Map step_params) {
 
     logger.logger('msg':'Performing Build Step for Node.js', 'level':'INFO')
 
-    repo_url = "${step_params.repo_url}"
-    source_code_path = "${step_params.source_code_path}"
-    node_version = step_params.node_version ?: "18"
-    build_secret_creds_id  = step_params.build_secret_creds_id  ?: ''
-    build_secret_env_var   = step_params.build_secret_env_var   ?: 'BUILD_SECRET'
+    repo_url              = "${step_params.repo_url}"
+    source_code_path      = "${step_params.source_code_path}"
+    node_version          = step_params.node_version          ?: "18"
+    build_secret_creds_id = step_params.build_secret_creds_id ?: ''
+    build_secret_env_var  = step_params.build_secret_env_var  ?: 'BUILD_SECRET'
 
-    repo_dir = parser.fetch_git_repo_name('repo_url':"${repo_url}")
+    repo_dir     = parser.fetch_git_repo_name('repo_url':"${repo_url}")
+    project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
 
-    dir("${WORKSPACE}/${repo_dir}${source_code_path ?: ''}") {
+    dir(project_path) {
         if (build_secret_creds_id) {
             // Pass the Jenkins credential into Docker as the configured env var and run the build
             withCredentials([string(credentialsId: build_secret_creds_id, variable: 'THE_SECRET')]) {
                 sh """docker run --rm \
-                    -v ${WORKSPACE}/${repo_dir}${source_code_path ?: ''}:/app/ \
+                    -v ${project_path}:/app/ \
                     -w /app \
                     -e ${build_secret_env_var}=\$THE_SECRET \
                     node:${node_version} sh -c 'npm install && npm run build --if-present'"""
             }
         } else {
-            sh """ docker run --rm -v \${WORKSPACE}/${repo_dir}${source_code_path ?: ''}:/app/ -w /app node:${node_version} sh -c "npm install && npm run build --if-present" """
+            sh """docker run --rm -v ${project_path}:/app/ -w /app node:${node_version} sh -c "npm install && npm run build --if-present" """
         }
         logger.logger('msg':'Build successful', 'level':'INFO')
     }

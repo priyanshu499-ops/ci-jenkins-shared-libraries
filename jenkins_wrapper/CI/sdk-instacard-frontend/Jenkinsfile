@@ -47,7 +47,7 @@ node {
     perform_build_dockerfile         : false,
     dockerfile_location              : '/Dockerfile',
     dockerfile_context               : '',
-    image_name                       : 'spring-boot-realworld-app',
+    image_name                       : 'sdk-instacard-frontend',
     image_tag                        : 'latest',
     // IMAGE SCANNING (TRIVY)
     image_scanning_check             : false,
