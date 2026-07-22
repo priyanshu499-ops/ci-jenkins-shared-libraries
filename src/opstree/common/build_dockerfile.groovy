@@ -54,6 +54,9 @@ def build_dockerfile(Map step_params) {
     def raw_secret_creds_id = step_params.build_secret_creds_id
     def build_secret_creds_id = (raw_secret_creds_id && raw_secret_creds_id != 'null') ? raw_secret_creds_id : ''
 
+    def raw_secret_env_var = step_params.build_secret_env_var
+    def build_secret_env_var = (raw_secret_env_var && raw_secret_env_var != 'null') ? raw_secret_env_var : 'azure_face_api_key'
+
     dir("${buildDir}") {
         if (build_secret_creds_id) {
             // Pass Jenkins credential to Docker via BuildKit secret mount (id=AZURE_FACE_API_KEY)

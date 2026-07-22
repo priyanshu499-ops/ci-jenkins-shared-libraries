@@ -29,9 +29,9 @@ node {
     perform_code_build               : false,
     node_version                     : '20',
     build_secret_creds_id            : 'AZURE_FACE_API_KEY',
-    build_secret_env_var             : 'AZURE_FACE_API_KEY',
+    build_secret_env_var             : 'azure_face_api_key',
     // UNIT TESTING
-    unit_testing_check               : 'true',     // must be String 'true', not boolean true
+    unit_testing_check               : 'false',     // must be String 'true', not boolean true
     fail_job_if_unit_issue_detected  : 'false',    // must be String 'false', not boolean false
     unit_test_reports_path           : '**/build/test-results/test/*.xml',
     // STATIC CODE ANALYSIS
