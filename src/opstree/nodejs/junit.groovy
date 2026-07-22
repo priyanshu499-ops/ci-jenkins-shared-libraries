@@ -31,7 +31,7 @@ def unit_test(Map step_params) {
     def project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
     dir(project_path) {
         try {
-            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --coverage.reporter=text --coverage.reporter=lcov --coverage.reporter=html || true)"
+            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile.junit=junit.xml --coverage --coverage.reporter=text --coverage.reporter=lcov --coverage.reporter=html || true)"
 
             if (build_secret_creds_id) {
                 // Private Azure DevOps npm feed — fetch short-lived token and write .npmrc
@@ -84,7 +84,8 @@ def unit_test(Map step_params) {
             """
 
             def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit*.xml'
-            reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_test_report_path}")
+            def findbugs_pattern = step_params.findbugs_test_report_path ?: ''
+            reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_pattern}")
 
             // Publish HTML coverage report if generated (use relative path from current dir)
             if (fileExists("coverage/lcov-report/index.html")) {
@@ -96,8 +97,9 @@ def unit_test(Map step_params) {
         catch (Exception e) {
             // Still publish any XML / HTML reports if generated before exception
             def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit*.xml'
+            def findbugs_pattern = step_params.findbugs_test_report_path ?: ''
             try {
-                reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_test_report_path}")
+                reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_pattern}")
                 if (fileExists("coverage/lcov-report/index.html")) {
                     publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'coverage/lcov-report', reportFiles: 'index.html', reportName: 'Unit Test Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
                 } else if (fileExists("coverage/index.html")) {
