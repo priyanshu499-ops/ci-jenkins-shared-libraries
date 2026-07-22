@@ -31,7 +31,8 @@ def build_dockerfile(Map step_params) {
 
     def dockerfile_context  = "${step_params.dockerfile_context}"
     def dockerfile_location = "${step_params.dockerfile_location}"
-    def build_args          = "${step_params.build_args ?: ''}"
+    def raw_build_args      = step_params.build_args
+    def build_args          = (raw_build_args && raw_build_args != 'null') ? raw_build_args : ''
 
     if (dockerfile_context != null && dockerfile_context != '') {
         dockerfile_context = "${WORKSPACE}/${repo_dir}" + dockerfile_context

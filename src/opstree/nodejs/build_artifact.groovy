@@ -23,7 +23,11 @@ def build_artifact(Map step_params) {
     node_version          = step_params.node_version          ?: "18"
     build_secret_creds_id = step_params.build_secret_creds_id ?: ''
     build_secret_env_var  = step_params.build_secret_env_var  ?: 'BUILD_SECRET'
-    build_command         = step_params.build_command         ?: 'npm install && npm run build --if-present'
+    // GString interpolation converts null → "null" string, so guard against that
+    def raw_build_command = step_params.build_command
+    build_command         = (raw_build_command && raw_build_command != 'null') \
+                                ? raw_build_command \
+                                : 'npm install && npm run build --if-present'
 
     repo_dir     = parser.fetch_git_repo_name('repo_url':"${repo_url}")
     project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
