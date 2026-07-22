@@ -31,7 +31,7 @@ def unit_test(Map step_params) {
     def project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
     dir(project_path) {
         try {
-            def test_cmd = "npm install && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage || npm test)"
+            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml || npm test)"
 
             if (build_secret_creds_id) {
                 // Private Azure DevOps npm feed — fetch short-lived token and write .npmrc
