@@ -23,6 +23,7 @@ def build_artifact(Map step_params) {
     node_version          = step_params.node_version          ?: "18"
     build_secret_creds_id = step_params.build_secret_creds_id ?: ''
     build_secret_env_var  = step_params.build_secret_env_var  ?: 'BUILD_SECRET'
+    build_command         = step_params.build_command         ?: 'npm install && npm run build --if-present'
 
     repo_dir     = parser.fetch_git_repo_name('repo_url':"${repo_url}")
     project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
@@ -31,7 +32,6 @@ def build_artifact(Map step_params) {
         if (build_secret_creds_id) {
             // Fetch a short-lived Azure access token on the agent, write .npmrc.local so
             // npm inside the container can authenticate to the private Azure feed.
-            // The docker run line itself stays simple — no inline scripts inside it.
             withCredentials([string(credentialsId: build_secret_creds_id, variable: 'THE_SECRET')]) {
                 try {
                     sh """
@@ -54,14 +54,14 @@ EOF
                     sh """docker run --rm \\
                         -v ${project_path}:/app/ \\
                         -w /app \\
-                        node:${node_version} sh -c 'npm install && npm run build --if-present'"""
+                        node:${node_version} sh -c '${build_command}'"""
                 } finally {
                     sh "rm -f ${project_path}/.npmrc.local"
                     logger.logger('msg':'Cleaned up .npmrc.local', 'level':'INFO')
                 }
             }
         } else {
-            sh """docker run --rm -v ${project_path}:/app/ -w /app node:${node_version} sh -c "npm install && npm run build --if-present" """
+            sh """docker run --rm -v ${project_path}:/app/ -w /app node:${node_version} sh -c "${build_command}" """
         }
         logger.logger('msg':'Build successful', 'level':'INFO')
     }

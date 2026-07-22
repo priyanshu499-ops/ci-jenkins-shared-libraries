@@ -31,6 +31,7 @@ def build_dockerfile(Map step_params) {
 
     def dockerfile_context  = "${step_params.dockerfile_context}"
     def dockerfile_location = "${step_params.dockerfile_location}"
+    def build_args          = "${step_params.build_args ?: ''}"
 
     if (dockerfile_context != null && dockerfile_context != '') {
         dockerfile_context = "${WORKSPACE}/${repo_dir}" + dockerfile_context
@@ -63,7 +64,7 @@ def build_dockerfile(Map step_params) {
                 sh """
                     git config --global --add safe.directory ${buildDir} && \\
                     COMMIT_HASH=\$(git rev-parse --short HEAD) && \\
-                    docker build --build-arg CODEARTIFACT_AUTH_TOKEN=${CODEARTIFACT_AUTH_TOKEN} -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
+                    docker build --build-arg CODEARTIFACT_AUTH_TOKEN=${CODEARTIFACT_AUTH_TOKEN} ${build_args} -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
                     docker tag ${image_name}:\${COMMIT_HASH} ${image_name}:latest
                 """
             }
@@ -71,7 +72,7 @@ def build_dockerfile(Map step_params) {
             sh """
                 git config --global --add safe.directory ${buildDir} && \\
                 COMMIT_HASH=\$(git rev-parse --short HEAD) && \\
-                docker build -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
+                docker build ${build_args} -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
                 docker tag ${image_name}:\${COMMIT_HASH} ${image_name}:latest
             """
         }
