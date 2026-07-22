@@ -25,11 +25,11 @@ node {
     fail_job_if_leak_detected        : false,
     gitleaks_scan_mode               : 'full',   // options: latest, full, last5, last10
     gitleaks_report_jenkins_publish  : true,
-    // BUILD ARTIFACT
-    perform_code_build               : true,
+    // BUILD ARTIFACT (npm install in node container)
+    perform_code_build               : false,  // Dockerfile handles npm install — no need for separate step
     node_version                     : '20',
-    build_secret_creds_id            : 'AZURE_FACE_API_KEY',   // Jenkins credential ID → add as Secret text in Jenkins
-    build_secret_env_var             : 'AZURE_FACE_API_KEY',   // env variable name passed into Docker container
+    build_secret_creds_id            : 'AZURE_FACE_API_KEY',
+    build_secret_env_var             : 'AZURE_FACE_API_KEY',
     // UNIT TESTING
     unit_testing_check               : 'true',     // must be String 'true', not boolean true
     fail_job_if_unit_issue_detected  : 'false',    // must be String 'false', not boolean false
@@ -43,8 +43,8 @@ node {
     fail_job_if_analysis_returned_exception : 'false',
     jenkins_sonarqube_token_creds_id        : 'SONARQUBE_TOKEN',
     source_code_path                        : "", 
-    // BUILD DOCKERFILE
-    perform_build_dockerfile         : false,
+    // BUILD DOCKERFILE (handles Azure token fetch + npm ci + nginx image via BuildKit secret)
+    perform_build_dockerfile         : true,
     dockerfile_location              : '/Dockerfile',
     dockerfile_context               : '',
     image_name                       : 'sdk-instacard-frontend',

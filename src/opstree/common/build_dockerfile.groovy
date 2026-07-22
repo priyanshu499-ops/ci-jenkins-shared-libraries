@@ -6,7 +6,7 @@ import opstree.common.*
 
 def build_factory(Map step_params) {
     def logger = new logger()
-    if (step_params.perform_build_dockerfile == 'true') {
+    if (step_params.perform_build_dockerfile == 'true' || step_params.perform_build_dockerfile == true) {
         build_dockerfile(step_params)
     } else {
         logger.logger('msg':'No valid option selected for Building Dockerfile. Please mention correct values.', 'level':'WARN')
@@ -63,17 +63,36 @@ def build_dockerfile(Map step_params) {
                 sh """
                     git config --global --add safe.directory ${buildDir} && \\
                     COMMIT_HASH=\$(git rev-parse --short HEAD) && \\
-                    docker build --build-arg CODEARTIFACT_AUTH_TOKEN=${CODEARTIFACT_AUTH_TOKEN} -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
+                    DOCKER_BUILDKIT=1 docker build --build-arg CODEARTIFACT_AUTH_TOKEN=${CODEARTIFACT_AUTH_TOKEN} -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
                     docker tag ${image_name}:\${COMMIT_HASH} ${image_name}:latest
                 """
             }
         } else {
-            sh """
-                git config --global --add safe.directory ${buildDir} && \\
-                COMMIT_HASH=\$(git rev-parse --short HEAD) && \\
-                docker build -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
-                docker tag ${image_name}:\${COMMIT_HASH} ${image_name}:latest
-            """
+            def build_secret_creds_id = step_params.build_secret_creds_id ?: ''
+            def build_secret_env_var  = step_params.build_secret_env_var  ?: 'BUILD_SECRET'
+
+            if (build_secret_creds_id) {
+                // Pass the Jenkins credential as a BuildKit secret — never visible in image layers or `docker history`
+                withCredentials([string(credentialsId: build_secret_creds_id, variable: 'THE_SECRET')]) {
+                    sh """
+                        git config --global --add safe.directory ${buildDir} && \\
+                        COMMIT_HASH=\$(git rev-parse --short HEAD) && \\
+                        DOCKER_BUILDKIT=1 docker build \\
+                            --secret id=${build_secret_env_var},env=THE_SECRET \\
+                            -f ${dockerfile_location} \\
+                            -t ${image_name}:\${COMMIT_HASH} \\
+                            ${dockerfile_context} && \\
+                        docker tag ${image_name}:\${COMMIT_HASH} ${image_name}:latest
+                    """
+                }
+            } else {
+                sh """
+                    git config --global --add safe.directory ${buildDir} && \\
+                    COMMIT_HASH=\$(git rev-parse --short HEAD) && \\
+                    DOCKER_BUILDKIT=1 docker build -f ${dockerfile_location} -t ${image_name}:\${COMMIT_HASH} ${dockerfile_context} && \\
+                    docker tag ${image_name}:\${COMMIT_HASH} ${image_name}:latest
+                """
+            }
         }
 
         logger.logger('msg':'Docker Build successful', 'level':'INFO')
