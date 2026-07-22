@@ -114,10 +114,18 @@ def unassign_roles(username):
 # ==========================
 
 def delete_user(username):
+    """
+    Attempts to delete the user directly via Jenkins API.
+    Returns: 'deleted' | 'not_found' | 'failed'
+    NOTE: We do NOT use user_exists() before calling this because
+    asynchPeople/api/json only lists users with build history, not all
+    users in the security realm. A newly onboarded user who never ran
+    a build will not appear there, causing false 'user does not exist' errors.
+    """
     crumb_field, crumb = get_crumb()
     headers = {crumb_field: crumb} if crumb else {}
 
-    # Unassign roles first
+    # Unassign roles first (safe to call even if user has none)
     unassign_roles(username)
 
     # Try standard endpoints for user deletion
@@ -131,12 +139,15 @@ def delete_user(username):
             res = requests.post(url, headers=headers, auth=(ADMIN_USER, ADMIN_TOKEN))
             if res.status_code in [200, 302]:
                 logging.info(f"[DELETED] {username}")
-                return True
+                return 'deleted'
+            elif res.status_code == 404:
+                logging.info(f"{username} user does not exist (404)")
+                return 'not_found'
         except Exception as e:
             logging.warning(f"Error calling {url}: {e}")
 
-    logging.error(f"[FAILED DELETE] {username}")
-    return False
+    logging.error(f"[FAILED DELETE] {username} — could not delete via any endpoint")
+    return 'failed'
 
 # ==========================
 # ROLE ASSIGN
@@ -233,27 +244,36 @@ def bulk_mode():
 # ==========================
 
 def delete_mode():
+    """
+    Delete users — does NOT pre-check user_exists() to avoid false negatives.
+    asynchPeople/api/json only lists users with build history; newly created
+    users will be missed. Instead, we attempt deletion and trust the API response.
+    """
     deleted_users = []
 
     try:
         if USERNAME:
-            # Delete single user specified via USERNAME env var
-            if not user_exists(USERNAME):
-                logging.info(f"{USERNAME} user does not exist")
+            # Single mode: delete the specified user directly
+            result = delete_user(USERNAME)
+            if result == 'deleted':
+                deleted_users.append(USERNAME)
+            elif result == 'not_found':
+                logging.info(f"{USERNAME} user does not exist in Jenkins")
             else:
-                if delete_user(USERNAME):
-                    deleted_users.append(USERNAME)
+                logging.error(f"Failed to delete {USERNAME}")
         else:
-            # Delete users listed in CSV
+            # Bulk mode: delete all users listed in CSV
             with open(CSV_PATH) as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     u = row["username"].strip()
-                    if not user_exists(u):
-                        logging.info(f"{u} user does not exist")
-                        continue
-                    if delete_user(u):
+                    result = delete_user(u)
+                    if result == 'deleted':
                         deleted_users.append(u)
+                    elif result == 'not_found':
+                        logging.info(f"{u} user does not exist in Jenkins")
+                    else:
+                        logging.error(f"Failed to delete {u}")
 
         with open('deleted_users.txt', 'w') as f:
             f.write("\n".join(deleted_users))
