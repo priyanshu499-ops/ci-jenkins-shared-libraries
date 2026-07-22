@@ -21,12 +21,26 @@ def build_artifact(Map step_params) {
     repo_url = "${step_params.repo_url}"
     source_code_path = "${step_params.source_code_path}"
     node_version = step_params.node_version ?: "18"
+    build_secret_creds_id = step_params.build_secret_creds_id ?: ''
 
     repo_dir = parser.fetch_git_repo_name('repo_url':"${repo_url}")
 
     dir("${WORKSPACE}/${repo_dir}${source_code_path ?: ''}") {
+        if (build_secret_creds_id) {
+            // Pass the Jenkins credential as NPM_TOKEN into the Docker container
+            withCredentials([string(credentialsId: build_secret_creds_id, variable: 'NPM_TOKEN')]) {
+                sh '''
+                    docker run --rm \
+                        -v ${WORKSPACE}/''' + "${repo_dir}${source_code_path ?: ''}" + ''':/app/ \
+                        -w /app \
+                        -e NPM_TOKEN=$NPM_TOKEN \
+                        node:''' + "${node_version}" + ''' sh -c "npm install && npm run build --if-present"
+                '''
+            }
+        } else {
             sh """ docker run --rm -v \${WORKSPACE}/${repo_dir}${source_code_path ?: ''}:/app/ -w /app node:${node_version} sh -c "npm install && npm run build --if-present" """
-            logger.logger('msg':'Build successful', 'level':'INFO')
+        }
+        logger.logger('msg':'Build successful', 'level':'INFO')
     }
 }
 
