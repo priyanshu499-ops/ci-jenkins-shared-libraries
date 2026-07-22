@@ -52,7 +52,6 @@ def sonar(Map step_params) {
                         "-Dsonar.host.url=${actual_host} " +
                         "-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,**/lcov.info " +
                         "-Dsonar.typescript.lcov.reportPaths=coverage/lcov.info,**/lcov.info " +
-                        "-Dsonar.testExecutionReportPaths=junit.xml,**/junit.xml " +
                         "${actual_extra}"
         } else {
             sonar_cmd = "-Dproject.settings=${path_to_sonar_properties}"

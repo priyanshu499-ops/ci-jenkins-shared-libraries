@@ -31,7 +31,7 @@ def unit_test(Map step_params) {
     def project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
     dir(project_path) {
         try {
-            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile.junit=junit.xml --coverage --coverage.reporter=text --coverage.reporter=lcov --coverage.reporter=html || true)"
+            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8@4.1.9 || npm install --no-save @vitest/coverage-v8 || true) && (npx vitest run --coverage --reporter=default --reporter=junit --outputFile=junit.xml || npm test -- --coverage || true)"
 
             if (build_secret_creds_id) {
                 // Private Azure DevOps npm feed — fetch short-lived token and write .npmrc
@@ -79,6 +79,7 @@ def unit_test(Map step_params) {
             sh """
                 if [ -f coverage/lcov.info ]; then
                     sed -i 's|/app/|/usr/src/|g' coverage/lcov.info || true
+                    sed -i 's|^SF:src/|SF:/usr/src/src/|g' coverage/lcov.info || true
                     echo "[INFO] Processed coverage/lcov.info paths for SonarQube"
                 fi
             """
