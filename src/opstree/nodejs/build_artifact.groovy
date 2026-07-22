@@ -29,13 +29,36 @@ def build_artifact(Map step_params) {
 
     dir(project_path) {
         if (build_secret_creds_id) {
-            // Pass the Jenkins credential into Docker as the configured env var and run the build
+            // Fetch a short-lived Azure access token on the agent, write .npmrc.local so
+            // npm inside the container can authenticate to the private Azure feed.
+            // The docker run line itself stays simple — no inline scripts inside it.
             withCredentials([string(credentialsId: build_secret_creds_id, variable: 'THE_SECRET')]) {
-                sh """docker run --rm \
-                    -v ${project_path}:/app/ \
-                    -w /app \
-                    -e ${build_secret_env_var}=\$THE_SECRET \
-                    node:${node_version} sh -c 'npm install && npm run build --if-present'"""
+                try {
+                    sh """
+                        set -e
+                        FEED=pkgs.dev.azure.com/msface/SDK/_packaging/AzureAIVision/npm
+                        RESPONSE=\$(curl --silent --fail \\
+                            'https://montrafacedev.cognitiveservices.azure.com/face/v1.3-preview.1/settings/getClientAssetsAccessToken' \\
+                            --header "Ocp-Apim-Subscription-Key: \$THE_SECRET")
+                        B64_TOKEN=\$(echo "\$RESPONSE" | python3 -c "import sys,json; print(json.load(sys.stdin)['base64AccessToken'])")
+                        cat > ${project_path}/.npmrc.local <<EOF
+//\${FEED}/registry/:username=msface
+//\${FEED}/registry/:_password=\${B64_TOKEN}
+//\${FEED}/registry/:email=not-used@example.com
+//\${FEED}/:username=msface
+//\${FEED}/:_password=\${B64_TOKEN}
+//\${FEED}/:email=not-used@example.com
+EOF
+                        echo "[INFO] .npmrc.local written with Azure feed credentials"
+                    """
+                    sh """docker run --rm \\
+                        -v ${project_path}:/app/ \\
+                        -w /app \\
+                        node:${node_version} sh -c 'npm install && npm run build --if-present'"""
+                } finally {
+                    sh "rm -f ${project_path}/.npmrc.local"
+                    logger.logger('msg':'Cleaned up .npmrc.local', 'level':'INFO')
+                }
             }
         } else {
             sh """docker run --rm -v ${project_path}:/app/ -w /app node:${node_version} sh -c "npm install && npm run build --if-present" """
