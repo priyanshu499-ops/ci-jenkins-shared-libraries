@@ -48,8 +48,20 @@ def build_artifact(Map step_params) {
                                         if (data && data.base64AccessToken) {
                                             const feed = \\"pkgs.dev.azure.com/msface/SDK/_packaging/AzureAIVision/npm\\";
                                             const token = data.base64AccessToken;
-                                            const npmrc = \\\`legacy-peer-deps=true\\\\n@azure-ai-vision-face:registry=https://\\\${feed}/registry/\\\\n@azure:registry=https://\\\${feed}/registry/\\\\nalways-auth=true\\\\n//\\\${feed}/registry/:username=msface\\\\n//\\\${feed}/registry/:_password=\\\${token}\\\\n//\\\${feed}/registry/:email=not-used@example.com\\\\n//\\\${feed}/:username=msface\\\\n//\\\${feed}/:_password=\\\${token}\\\\n//\\\${feed}/:email=not-used@example.com\\\\n\\\`;
-                                            fs.writeFileSync(\\".npmrc\\", npmrc);
+                                            const lines = [
+                                                \\"legacy-peer-deps=true\\",
+                                                \\"@azure-ai-vision-face:registry=https://\\" + feed + \\"/registry/\\",
+                                                \\"@azure:registry=https://\\" + feed + \\"/registry/\\",
+                                                \\"always-auth=true\\",
+                                                \\"//\\" + feed + \\"/registry/:username=msface\\",
+                                                \\"//\\" + feed + \\"/registry/:_password=\\" + token,
+                                                \\"//\\" + feed + \\"/registry/:email=not-used@example.com\\",
+                                                \\"//\\" + feed + \\"/:username=msface\\",
+                                                \\"//\\" + feed + \\"/:_password=\\" + token,
+                                                \\"//\\" + feed + \\"/:email=not-used@example.com\\",
+                                                \\"\\"
+                                            ];
+                                            fs.writeFileSync(\\".npmrc\\", lines.join(\\"\\\\n\\"));
                                             console.log(\\"[INFO] Generated Azure .npmrc auth for private packages\\");
                                         }
                                     })
