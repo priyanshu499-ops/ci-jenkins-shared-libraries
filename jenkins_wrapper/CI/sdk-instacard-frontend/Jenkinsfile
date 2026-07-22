@@ -28,7 +28,8 @@ node {
     // BUILD ARTIFACT
     perform_code_build               : true,
     node_version                     : '20',
-    build_secret_creds_id            : 'INSTACARD_BUILD_KEY',  // Jenkins credential ID for npm build key → passed as NPM_TOKEN into Docker
+    build_secret_creds_id            : 'AZURE_FACE_API_KEY',   // Jenkins credential ID → add as Secret text in Jenkins
+    build_secret_env_var             : 'AZURE_FACE_API_KEY',   // env variable name passed into Docker container
     // UNIT TESTING
     unit_testing_check               : 'true',     // must be String 'true', not boolean true
     fail_job_if_unit_issue_detected  : 'false',    // must be String 'false', not boolean false
