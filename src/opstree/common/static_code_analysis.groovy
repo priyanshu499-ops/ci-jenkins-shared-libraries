@@ -50,8 +50,9 @@ def sonar(Map step_params) {
                         "-Dsonar.projectName=${sonar_project_name} " +
                         "-Dsonar.sources=${actual_sources} " +
                         "-Dsonar.host.url=${actual_host} " +
-                        "-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,**/lcov.info " +
-                        "-Dsonar.typescript.lcov.reportPaths=coverage/lcov.info,**/lcov.info " +
+                        "-Dsonar.javascript.lcov.reportPaths=lcov.info,coverage/lcov.info,**/lcov.info " +
+                        "-Dsonar.typescript.lcov.reportPaths=lcov.info,coverage/lcov.info,**/lcov.info " +
+                        "-Dsonar.scm.exclusions.disabled=true " +
                         "${actual_extra}"
         } else {
             sonar_cmd = "-Dproject.settings=${path_to_sonar_properties}"
@@ -61,7 +62,6 @@ def sonar(Map step_params) {
         // SONAR_TOKEN is injected via \$SONAR_TOKEN (shell variable) to avoid insecure GString interpolation
         def docker_cmd = "docker run --rm --user root" +
                          " -v \$WORKSPACE/${repo_dir}:/usr/src" +
-                         " -v \$WORKSPACE/${repo_dir}/.scannerwork:/tmp/.scannerwork" +
                          " -e SONAR_TOKEN=\$SONAR_TOKEN" +
                          " -w /usr/src" +
                          " sonarsource/sonar-scanner-cli ${sonar_cmd}"

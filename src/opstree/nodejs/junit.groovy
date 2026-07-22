@@ -80,7 +80,10 @@ def unit_test(Map step_params) {
                 if [ -f coverage/lcov.info ]; then
                     sed -i 's|/app/|/usr/src/|g' coverage/lcov.info || true
                     sed -i 's|^SF:src/|SF:/usr/src/src/|g' coverage/lcov.info || true
-                    echo "[INFO] Processed coverage/lcov.info paths for SonarQube"
+                    cp coverage/lcov.info lcov.info || true
+                    sed -i 's|/app/|/usr/src/|g' lcov.info || true
+                    sed -i 's|^SF:src/|SF:/usr/src/src/|g' lcov.info || true
+                    echo "[INFO] Processed coverage/lcov.info and lcov.info paths for SonarQube"
                 fi
             """
 
