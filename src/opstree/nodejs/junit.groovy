@@ -63,21 +63,39 @@ def unit_test(Map step_params) {
                         sh """docker run --rm \
                             -v ${project_path}:/app \
                             -v ${project_path}/.npmrc.unittest:/app/.npmrc:ro \
-                            -w /app node:${node_version} sh -c "npm install && npm test --if-present" """
+                            -w /app node:${node_version} sh -c "npm install && (npm run test:coverage --if-present || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --if-present || npm test --if-present)" """
                     } finally {
                         sh "rm -f ${project_path}/.npmrc.unittest"
                         logger.logger('msg':'Cleaned up .npmrc.unittest', 'level':'INFO')
                     }
                 }
             } else {
-                // No private feed credentials — plain npm install
-                sh """ docker run --rm -v \${WORKSPACE}/${repo_dir}${source_code_path ?: ''}:/app -w /app node:${node_version} sh -c "npm install && npm test --if-present" """
+                // No private feed credentials — plain npm install & test with coverage
+                sh """ docker run --rm -v \${WORKSPACE}/${repo_dir}${source_code_path ?: ''}:/app -w /app node:${node_version} sh -c "npm install && (npm run test:coverage --if-present || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --if-present || npm test --if-present)" """
             }
-            if (unit_test_reports_path || findbugs_test_report_path) {
-                reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: "${unit_test_reports_path}", findbugs_test_report_path: "${findbugs_test_report_path}")
+
+            def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit.xml, **/junit-*.xml, **/test-results*.xml, **/build/test-results/test/*.xml'
+            reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_test_report_path}")
+
+            // Publish HTML coverage report if generated
+            if (fileExists("${project_path}/coverage/lcov-report/index.html")) {
+                publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage/lcov-report", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
+            } else if (fileExists("${project_path}/coverage/index.html")) {
+                publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
             }
         }
         catch (Exception e) {
+            // Still publish any XML / HTML reports if generated before exception
+            def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit.xml, **/junit-*.xml, **/test-results*.xml, **/build/test-results/test/*.xml'
+            try {
+                reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_test_report_path}")
+                if (fileExists("${project_path}/coverage/lcov-report/index.html")) {
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage/lcov-report", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
+                } else if (fileExists("${project_path}/coverage/index.html")) {
+                    publishHTML([allowMissing: true, alwaysLinkToLastBuild: false, keepAll: false, reportDir: "${project_path}/coverage", reportFiles: 'index.html', reportName: 'Unit Test & Coverage Report', reportTitles: '', useWrapperFileDirectly: true])
+                }
+            } catch (ignored) {}
+
             if (fail_job_if_unit_issue_detected == 'false' || fail_job_if_unit_issue_detected == false) {
                 logger.logger('msg':'Unit Test found Issues!! Ignoring as per User inputs', 'level':'WARN')
             }

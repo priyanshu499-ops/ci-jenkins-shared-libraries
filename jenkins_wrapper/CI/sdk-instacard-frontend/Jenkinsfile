@@ -40,7 +40,7 @@ node {
     // UNIT TESTING
     unit_testing_check               : 'true',     // must be String 'true', not boolean true
     fail_job_if_unit_issue_detected  : 'false',    // must be String 'false', not boolean false
-    unit_test_reports_path           : '**/build/test-results/test/*.xml',
+    unit_test_reports_path           : '**/junit.xml, **/junit-*.xml, **/test-results*.xml',
 
     // STATIC CODE ANALYSIS
     static_code_analysis_check              : true,

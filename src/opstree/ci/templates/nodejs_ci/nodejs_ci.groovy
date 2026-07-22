@@ -104,6 +104,26 @@ def call(Map step_params) {
                         }
                 }
 
+                if (get_params_value(enableOverride, step_params, 'unit_testing_check') != null && get_params_value(enableOverride, step_params, 'unit_testing_check').toBoolean()) {
+                        stage('Unit Test') {
+                        unittest.unit_testing_factory(
+                                            repo_url: "${repo_url}",
+                                            repo_url_type: "${get_params_value(enableOverride, step_params, 'repo_url_type')}",
+                                            unit_testing_check: "${get_params_value(enableOverride, step_params, 'unit_testing_check')}",
+                                            fail_job_if_unit_issue_detected: "${get_params_value(enableOverride, step_params, 'fail_job_if_unit_issue_detected')}",
+                                            unit_test_reports_path: "${get_params_value(enableOverride, step_params, 'unit_test_reports_path')}",
+                                            findbugs_test_report_path: "${get_params_value(enableOverride, step_params, 'findbugs_test_report_path')}",
+                                            source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
+                                            node_version: "${get_params_value(enableOverride, step_params, 'node_version')}",
+                                            build_secret_creds_id: "${get_params_value(enableOverride, step_params, 'build_secret_creds_id')}",
+                                            build_secret_env_var: "${get_params_value(enableOverride, step_params, 'build_secret_env_var')}"
+                                    )
+                        }
+                }
+                else {
+                    echo 'Skipping Unit test stage as it is disabled.'
+                }
+
                 if (get_params_value(enableOverride, step_params, 'static_code_analysis_check') != null && get_params_value(enableOverride, step_params, 'static_code_analysis_check').toBoolean()) {
                     static_code_analysis.static_code_analysis_factory(
                                                         repo_url: "${repo_url}",
@@ -127,26 +147,6 @@ def call(Map step_params) {
                 }
                 else {
                         echo 'Skipping Static Code Analysis stage as it is disabled.'
-                }
-
-                if (get_params_value(enableOverride, step_params, 'unit_testing_check') != null && get_params_value(enableOverride, step_params, 'unit_testing_check').toBoolean()) {
-                        stage('Unit Test') {
-                        unittest.unit_testing_factory(
-                                            repo_url: "${repo_url}",
-                                            repo_url_type: "${get_params_value(enableOverride, step_params, 'repo_url_type')}",
-                                            unit_testing_check: "${get_params_value(enableOverride, step_params, 'unit_testing_check')}",
-                                            fail_job_if_unit_issue_detected: "${get_params_value(enableOverride, step_params, 'fail_job_if_unit_issue_detected')}",
-                                            unit_test_reports_path: "${get_params_value(enableOverride, step_params, 'unit_test_reports_path')}",
-                                            findbugs_test_report_path: "${get_params_value(enableOverride, step_params, 'findbugs_test_report_path')}",
-                                            source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
-                                            node_version: "${get_params_value(enableOverride, step_params, 'node_version')}",
-                                            build_secret_creds_id: "${get_params_value(enableOverride, step_params, 'build_secret_creds_id')}",
-                                            build_secret_env_var: "${get_params_value(enableOverride, step_params, 'build_secret_env_var')}"
-                                    )
-                        }
-                }
-                else {
-                    echo 'Skipping Unit test stage as it is disabled.'
                 }
 
                 if (get_params_value(enableOverride, step_params, 'perform_build_dockerfile') != null && get_params_value(enableOverride, step_params, 'perform_build_dockerfile').toBoolean()) {

@@ -50,6 +50,7 @@ def sonar(Map step_params) {
                         "-Dsonar.projectName=${sonar_project_name} " +
                         "-Dsonar.sources=${actual_sources} " +
                         "-Dsonar.host.url=${actual_host} " +
+                        "-Dsonar.javascript.lcov.reportPaths=coverage/lcov.info,**/lcov.info " +
                         "${actual_extra}"
         } else {
             sonar_cmd = "-Dproject.settings=${path_to_sonar_properties}"

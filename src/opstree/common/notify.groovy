@@ -158,9 +158,12 @@ def notification(Map step_params) {
         def reportButtons = ''
 
         def reportMap = [
-            'gitleaks/gitleaks_report.html'  : [ label: 'Gitleaks Security Report',     url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Gitleaks_20Security_20Report/" ],
-            'trivy/trivy_report.html'        : [ label: 'Trivy Image Scan Report',       url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Trivy_20Image_20Scanning_20Report/" ],
-            'owasp-reports/owasp_report.html': [ label: 'OWASP Dependency Check Report', url: "${env.JENKINS_URL}job/${env.JOB_NAME}/OWASP_20Dependency_20Check_20Report/" ]
+            'gitleaks/gitleaks_report.html'                         : [ label: 'Gitleaks Security Report',     url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Gitleaks_20Security_20Report/" ],
+            'trivy/trivy_report.html'                               : [ label: 'Trivy Image Scan Report',       url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Trivy_20Image_20Scanning_20Report/" ],
+            'owasp-reports/owasp_report.html'                       : [ label: 'OWASP Dependency Check Report', url: "${env.JENKINS_URL}job/${env.JOB_NAME}/OWASP_20Dependency_20Check_20Report/" ],
+            'sdk-instacard-frontend/coverage/lcov-report/index.html': [ label: 'Unit Test & Coverage Report',  url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Unit_20Test_20_26_20Coverage_20Report/" ],
+            'coverage/lcov-report/index.html'                       : [ label: 'Unit Test & Coverage Report',  url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Unit_20Test_20_26_20Coverage_20Report/" ],
+            'coverage/index.html'                                   : [ label: 'Unit Test & Coverage Report',  url: "${env.JENKINS_URL}job/${env.JOB_NAME}/Unit_20Test_20_26_20Coverage_20Report/" ]
         ]
         reportMap.each { path, info ->
             if (fileExists(path)) {
@@ -178,9 +181,12 @@ def notification(Map step_params) {
         sh "mkdir -p ${attachDir}"
 
         def reportAttachMap = [
-            'gitleaks/gitleaks_report.html'  : [ css: 'gitleaks/report.css',      name: 'Gitleaks_Security_Report' ],
-            'trivy/trivy_report.html'        : [ css: 'trivy/report.css',          name: 'Trivy_Scan_Report' ],
-            'owasp-reports/owasp_report.html': [ css: 'owasp-reports/report.css', name: 'OWASP_Dependency_Report' ]
+            'gitleaks/gitleaks_report.html'                         : [ css: 'gitleaks/report.css',          name: 'Gitleaks_Security_Report' ],
+            'trivy/trivy_report.html'                               : [ css: 'trivy/report.css',              name: 'Trivy_Scan_Report' ],
+            'owasp-reports/owasp_report.html'                       : [ css: 'owasp-reports/report.css',     name: 'OWASP_Dependency_Report' ],
+            'sdk-instacard-frontend/coverage/lcov-report/index.html': [ css: '',                           name: 'UnitTest_Coverage_Report' ],
+            'coverage/lcov-report/index.html'                       : [ css: 'coverage/lcov-report/base.css', name: 'UnitTest_Coverage_Report' ],
+            'coverage/index.html'                                   : [ css: '',                             name: 'UnitTest_Coverage_Report' ]
         ]
 
         reportAttachMap.each { htmlPath, info ->
