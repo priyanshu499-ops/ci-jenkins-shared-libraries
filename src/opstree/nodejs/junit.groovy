@@ -31,7 +31,7 @@ def unit_test(Map step_params) {
     def project_path = "${WORKSPACE}/${repo_dir}${source_code_path ?: ''}"
     dir(project_path) {
         try {
-            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --coverage.reporter=text --coverage.reporter=lcov --coverage.reporter=html || npm test -- --reporter=default --reporter=junit --outputFile=junit.xml || npm test)"
+            def test_cmd = "npm install && (npm install --no-save @vitest/coverage-v8 || true) && (npm test -- --reporter=default --reporter=junit --outputFile=junit.xml --coverage --coverage.reporter=text --coverage.reporter=lcov --coverage.reporter=html || true)"
 
             if (build_secret_creds_id) {
                 // Private Azure DevOps npm feed — fetch short-lived token and write .npmrc
@@ -60,9 +60,9 @@ def unit_test(Map step_params) {
                             echo "[INFO] .npmrc.unittest written with Azure feed credentials"
                         """
                         sh """docker run --rm \
-                            -v ${project_path}:/app \
-                            -v ${project_path}/.npmrc.unittest:/app/.npmrc:ro \
-                            -w /app node:${node_version} sh -c '${test_cmd}'"""
+                            -v ${project_path}:/usr/src \
+                            -v ${project_path}/.npmrc.unittest:/usr/src/.npmrc:ro \
+                            -w /usr/src node:${node_version} sh -c '${test_cmd}'"""
                     } finally {
                         sh "rm -f ${project_path}/.npmrc.unittest"
                         logger.logger('msg':'Cleaned up .npmrc.unittest', 'level':'INFO')
@@ -71,9 +71,17 @@ def unit_test(Map step_params) {
             } else {
                 // No private feed credentials — plain npm install & test with coverage
                 sh """docker run --rm \
-                    -v ${project_path}:/app \
-                    -w /app node:${node_version} sh -c '${test_cmd}'"""
+                    -v ${project_path}:/usr/src \
+                    -w /usr/src node:${node_version} sh -c '${test_cmd}'"""
             }
+
+            // Fix path resolution in lcov.info for SonarQube (map /app/ or relative paths to /usr/src/)
+            sh """
+                if [ -f coverage/lcov.info ]; then
+                    sed -i 's|/app/|/usr/src/|g' coverage/lcov.info || true
+                    echo "[INFO] Processed coverage/lcov.info paths for SonarQube"
+                fi
+            """
 
             def reports_pattern = (unit_test_reports_path != null && unit_test_reports_path != 'null' && unit_test_reports_path != '') ? unit_test_reports_path : '**/junit*.xml'
             reports_manager.publish_static_code_analysis_issues(unit_test_reports_path: reports_pattern, findbugs_test_report_path: "${findbugs_test_report_path}")
