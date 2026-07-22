@@ -40,10 +40,10 @@ def build_dockerfile(Map step_params) {
         dockerfile_context = "${WORKSPACE}/${repo_dir}"
     }
 
-    if (dockerfile_location != '') {
-        dockerfile_location = "${WORKSPACE}/${repo_dir}" + dockerfile_location
+    if (dockerfile_location != null && dockerfile_location != '') {
+        dockerfile_location = "${WORKSPACE}/${repo_dir}/" + dockerfile_location.replaceAll('^/', '')
     } else {
-        dockerfile_location = 'Dockerfile'
+        dockerfile_location = "${WORKSPACE}/${repo_dir}/Dockerfile"
     }
 
     // Build context dir: source_code_path is relative to WORKSPACE, not repo_dir
@@ -51,8 +51,26 @@ def build_dockerfile(Map step_params) {
         "${WORKSPACE}/${source_code_path.replaceAll('^/', '')}" :
         "${WORKSPACE}/${repo_dir}"
 
+    def raw_secret_creds_id = step_params.build_secret_creds_id
+    def build_secret_creds_id = (raw_secret_creds_id && raw_secret_creds_id != 'null') ? raw_secret_creds_id : ''
+
     dir("${buildDir}") {
-        if (codeartifact_dependency == 'true') {
+        if (build_secret_creds_id) {
+            // Pass Jenkins credential to Docker via BuildKit secret mount (id=AZURE_FACE_API_KEY)
+            withCredentials([string(credentialsId: build_secret_creds_id, variable: 'THE_SECRET')]) {
+                sh """
+                    git config --global --add safe.directory ${buildDir} && \\
+                    COMMIT_HASH=\$(git rev-parse --short HEAD) && \\
+                    DOCKER_BUILDKIT=1 docker build \\
+                        --secret id=${build_secret_env_var},env=THE_SECRET \\
+                        ${build_args} \\
+                        -f ${dockerfile_location} \\
+                        -t ${image_name}:\${COMMIT_HASH} \\
+                        ${dockerfile_context} && \\
+                    docker tag ${image_name}:\${COMMIT_HASH} ${image_name}:latest
+                """
+            }
+        } else if (codeartifact_dependency == 'true') {
             withAWS() {
                 def codeArtifactToken = sh(
                     script: """

@@ -161,7 +161,9 @@ def call(Map step_params) {
                                                     codeartifact_dependency: "${get_params_value(enableOverride, step_params, 'codeartifact_dependency')}",
                                                     codeartifact_domain: "${get_params_value(enableOverride, step_params, 'codeartifact_domain')}",
                                                     codeartifact_owner: "${get_params_value(enableOverride, step_params, 'codeartifact_owner')}",
-                                                    build_args: "${get_params_value(enableOverride, step_params, 'build_args')}"
+                                                    build_args: "${get_params_value(enableOverride, step_params, 'build_args')}",
+                                                    build_secret_creds_id: "${get_params_value(enableOverride, step_params, 'build_secret_creds_id')}",
+                                                    build_secret_env_var: "${get_params_value(enableOverride, step_params, 'build_secret_env_var')}"
                                             )
                     }
                 }
