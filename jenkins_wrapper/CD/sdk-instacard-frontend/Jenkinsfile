@@ -23,18 +23,20 @@ node {
     jenkins_git_creds_id: 'github-token',
     source_code_path: '',
 
-    // Argocd
+ // Argocd
     perform_argocd_deployment: true,
-    app_name: 'simple-nodejs',
-    app_type: 'apps',
+    app_name: 'sdk-instacard-frontend',
+    app_type: '',               // not used for project name — use argocd_project instead
+    argocd_project: 'dev',      // matches the actual ArgoCD project (was wrongly 'apps-dev')
     app_env: 'dev',
-    argocd_project: 'dev',
     argocd_credential_id: 'argocd-cred',
     argocd_server_env_name: 'ARGOCD_URL',
     deployment_strategy: 'helm',
-    values_file_path: '../applications/dev/simple-nodejs-values.yaml',
+    values_file_path: 'applications/dev/sdk-instacard-frontend-values.yaml',
     prune_post_deployment: true,
     perform_health_check: false,
+    destination_server: 'https://172.16.1.2',
+
 
     dry_run: true,
     require_manual_approval: true,
