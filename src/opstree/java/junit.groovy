@@ -61,12 +61,16 @@ def unit_test(Map step_params) {
                 }
             } else if (build_tool == 'gradle') {
                 try {
+                    // Write init script from shared library resources to workspace
+                    def initScriptContent = libraryResource('gradle-jacoco-init.gradle')
+                    writeFile file: "${WORKSPACE}/${repo_dir}/gradle-jacoco-init.gradle", text: initScriptContent
+
                     if (java_version == '11') {
-                        sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app -w /app gradle:7.5-jdk11 sh -c 'gradle test jacocoTestReport' """
+                        sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app -w /app gradle:7.5-jdk11 sh -c 'gradle test --init-script /app/gradle-jacoco-init.gradle && gradle jacocoTestReport --init-script /app/gradle-jacoco-init.gradle' """
                     } else if (java_version == '17') {
-                        sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app -w /app gradle:7.5-jdk17 sh -c 'gradle test jacocoTestReport' """
+                        sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app -w /app gradle:7.5-jdk17 sh -c 'gradle test --init-script /app/gradle-jacoco-init.gradle && gradle jacocoTestReport --init-script /app/gradle-jacoco-init.gradle' """
                     } else if (java_version == '21') {
-                        sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app -w /app gradle:8.5-jdk21 sh -c 'gradle test --init-script /app/gradle-jacoco-init.gradle; gradle jacocoTestReport --init-script /app/gradle-jacoco-init.gradle' """
+                        sh """ docker run --rm -v ~/.gradle:/root/.gradle -v ${WORKSPACE}/${repo_dir}:/app -w /app gradle:8.5-jdk21 sh -c 'gradle test --init-script /app/gradle-jacoco-init.gradle && gradle jacocoTestReport --init-script /app/gradle-jacoco-init.gradle' """
                     } else {
                         logger.logger('msg':"Unsupported java_version=[${java_version}] for Gradle. Supported: 11, 17, 21", 'level':'ERROR')
                         error()

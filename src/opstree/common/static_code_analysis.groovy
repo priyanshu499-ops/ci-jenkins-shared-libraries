@@ -65,15 +65,14 @@ def sonar(Map step_params) {
                          " -v \$WORKSPACE/${repo_dir}:/usr/src" +
                          " -e SONAR_TOKEN=\$SONAR_TOKEN" +
                          " -w /usr/src" +
-                         " sonarsource/sonar-scanner-cli ${sonar_cmd}"
+                         " sonarsource/sonar-scanner-cli ${sonar_cmd}" +
+                         " -Dsonar.working.directory=/usr/src/.scannerwork"
 
         if (fail_job_if_analysis_returned_exception == 'false') {
                 try {
                         withCredentials([string(credentialsId: jenkins_sonarqube_token_creds_id , variable: 'SONAR_TOKEN')]) {
                             withSonarQubeEnv('SonarQube') {
                                 sh "${docker_cmd}"
-                                // Copy report-task.txt from container scan output to workspace so waitForQualityGate can find it
-                                sh """docker run --rm --user root -v \$WORKSPACE/${repo_dir}:/usr/src -w /usr/src sonarsource/sonar-scanner-cli sh -c '[ -f /tmp/.scannerwork/report-task.txt ] && cp /tmp/.scannerwork/report-task.txt /usr/src/ || true'"""
                                 logger.logger('msg':'Static Code Analysis Scanning Complete', 'level':'INFO')
                             }
                             sleep(10)
