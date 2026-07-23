@@ -113,29 +113,6 @@ def call(Map step_params) {
                         }
                 }
 
-                if (get_params_value(enableOverride, step_params, 'unit_testing_check') != null && get_params_value(enableOverride, step_params, 'unit_testing_check').toBoolean()) {
-                        stage('Unit Test & Code Coverage') {
-                    unittest.unit_testing_factory(
-                                        repo_url: "${repo_url}",
-                                        repo_url_type: "${get_params_value(enableOverride, step_params, 'repo_url_type')}",
-                                        unit_testing_check: "${get_params_value(enableOverride, step_params, 'unit_testing_check')}",
-                                        build_tool: "${get_params_value(enableOverride, step_params, 'build_tool')}",
-                                        fail_job_if_unit_issue_detected: "${get_params_value(enableOverride, step_params, 'fail_job_if_unit_issue_detected')}",
-                                        unit_test_reports_path: "${get_params_value(enableOverride, step_params, 'unit_test_reports_path')}",
-                                        findbugs_test_report_path: "${get_params_value(enableOverride, step_params, 'findbugs_test_report_path')}",
-                                        withmaven_globaltool_jdk: "${get_params_value(enableOverride, step_params, 'withmaven_globaltool_jdk')}",
-                                        withmaven_globaltool_maven: "${get_params_value(enableOverride, step_params, 'withmaven_globaltool_maven')}",
-                                        source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
-                                        mvn_settings_path: "${get_params_value(enableOverride, step_params, 'mvn_settings_path')}",
-                                        pom_location : "${get_params_value(enableOverride, step_params, 'pom_location')}",
-                                        java_version : "${get_params_value(enableOverride, step_params, 'java_version')}"
-                                )
-                           }
-                }
-                else {
-                echo 'Skipping Unit test and Code Coverage stage as it is disabled.'
-                }
-
                 if (get_params_value(enableOverride, step_params, 'static_code_analysis_check') != null && get_params_value(enableOverride, step_params, 'static_code_analysis_check').toBoolean()) {
                         stage('Static Code Analysis') {
                     static_code_analysis.static_code_analysis_factory(
@@ -163,6 +140,31 @@ def call(Map step_params) {
                 }
                 else {
                         echo 'Skipping Static Code Analysis stage as it is disabled.'
+                }
+
+                if (get_params_value(enableOverride, step_params, 'unit_testing_check') != null && get_params_value(enableOverride, step_params, 'unit_testing_check').toBoolean()) {
+                        stage('Unit Test & Code Coverage') {
+                    unittest.unit_testing_factory(
+                                        repo_url: "${repo_url}",
+                                        repo_url_type: "${get_params_value(enableOverride, step_params, 'repo_url_type')}",
+                                        unit_testing_check: "${get_params_value(enableOverride, step_params, 'unit_testing_check')}",
+                                        build_tool: "${get_params_value(enableOverride, step_params, 'build_tool')}",
+                                        fail_job_if_unit_issue_detected: "${get_params_value(enableOverride, step_params, 'fail_job_if_unit_issue_detected')}",
+                                        unit_test_reports_path: "${get_params_value(enableOverride, step_params, 'unit_test_reports_path')}",
+                                        findbugs_test_report_path: "${get_params_value(enableOverride, step_params, 'findbugs_test_report_path')}",
+                                        withmaven_globaltool_jdk: "${get_params_value(enableOverride, step_params, 'withmaven_globaltool_jdk')}",
+                                        withmaven_globaltool_maven: "${get_params_value(enableOverride, step_params, 'withmaven_globaltool_maven')}",
+                                        source_code_path: "${get_params_value(enableOverride, step_params, 'source_code_path')}",
+                                        mvn_settings_path: "${get_params_value(enableOverride, step_params, 'mvn_settings_path')}",
+                                        pom_location : "${get_params_value(enableOverride, step_params, 'pom_location')}",
+                                        java_version : "${get_params_value(enableOverride, step_params, 'java_version')}"
+
+                                )
+                           }
+                }
+
+                else {
+                echo 'Skipping Unit test and Code Coverage stage as it is disabled.'
                 }
 
                 if (get_params_value(enableOverride, step_params, 'perform_build_dockerfile') != null && get_params_value(enableOverride, step_params, 'perform_build_dockerfile').toBoolean()) {
