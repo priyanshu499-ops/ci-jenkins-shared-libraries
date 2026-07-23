@@ -50,9 +50,8 @@ def sonar(Map step_params) {
                         "-Dsonar.projectName=${sonar_project_name} " +
                         "-Dsonar.sources=${actual_sources} " +
                         "-Dsonar.host.url=${actual_host} " +
-                        "-Dsonar.javascript.lcov.reportPaths=lcov.info,coverage/lcov.info,**/lcov.info " +
-                        "-Dsonar.typescript.lcov.reportPaths=lcov.info,coverage/lcov.info,**/lcov.info " +
-                        "-Dsonar.coverage.jacoco.xmlReportPaths=build/reports/jacoco/test/jacocoTestReport.xml " +
+                        "-Dsonar.javascript.lcov.reportPaths=lcov.info,coverage/lcov.info " +
+                        "-Dsonar.typescript.lcov.reportPaths=lcov.info,coverage/lcov.info " +
                         "-Dsonar.scm.exclusions.disabled=true " +
                         "${actual_extra}"
         } else {

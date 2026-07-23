@@ -75,15 +75,20 @@ def unit_test(Map step_params) {
                     -w /usr/src node:${node_version} sh -c '${test_cmd}'"""
             }
 
-            // Fix path resolution in lcov.info for SonarQube (map /app/ or relative paths to /usr/src/)
+            // Normalize lcov.info paths for SonarQube.
+            // SonarScanner runs in Docker with -v project:/usr/src -w /usr/src
+            // So lcov.info must have RELATIVE paths like SF:src/... (not SF:/usr/src/src/...)
+            // We only fix paths generated inside old /app containers — convert /app/src/ → src/
             sh """
                 if [ -f coverage/lcov.info ]; then
-                    sed -i 's|/app/|/usr/src/|g' coverage/lcov.info || true
-                    sed -i 's|^SF:src/|SF:/usr/src/src/|g' coverage/lcov.info || true
+                    # Fix absolute /app/src/ paths (some Docker base images use /app as workdir)
+                    sed -i 's|^SF:/app/|SF:|g' coverage/lcov.info || true
+                    # Copy to root so SonarQube lcov.info path also works (belt + suspenders)
                     cp coverage/lcov.info lcov.info || true
-                    sed -i 's|/app/|/usr/src/|g' lcov.info || true
-                    sed -i 's|^SF:src/|SF:/usr/src/src/|g' lcov.info || true
-                    echo "[INFO] Processed coverage/lcov.info and lcov.info paths for SonarQube"
+                    cat coverage/lcov.info | head -5
+                    echo "[INFO] lcov.info paths ready for SonarQube"
+                else
+                    echo "[WARN] coverage/lcov.info not found — coverage will be 0%"
                 fi
             """
 
