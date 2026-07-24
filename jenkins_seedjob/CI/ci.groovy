@@ -1,10 +1,10 @@
 // Common Parameters
 def commonParameters = [
     [
-        type: 'choice',
+        type: 'string',
         name: 'BRANCH',
-        choices: ['dev', 'uat', 'main'],
-        description: 'Select branch to build'
+        defaultValue: 'main',
+        description: 'Branch to build'
     ],
     [
         type: 'choice',
@@ -121,16 +121,36 @@ ciJobs.each { jobName, config ->
 
                 switch (param.type) {
 
+                    case 'string':
+                        stringParam(
+                            param.name,
+                            param.defaultValue,
+                            param.description
+                        )
+                        break
+
                     case 'choice':
-                        choiceParam(param.name, param.choices, param.description)
+                        choiceParam(
+                            param.name,
+                            param.choices,
+                            param.description
+                        )
                         break
 
                     case 'boolean':
-                        booleanParam(param.name, param.defaultValue, param.description)
+                        booleanParam(
+                            param.name,
+                            param.defaultValue,
+                            param.description
+                        )
                         break
 
                     default:
-                        stringParam(param.name, param.defaultValue, param.description)
+                        stringParam(
+                            param.name,
+                            param.defaultValue ?: '',
+                            param.description
+                        )
                 }
             }
         }
